@@ -1,6 +1,8 @@
 const chatMessages = document.getElementById('chat-messages');
 const messageInput = document.getElementById('message-input');
 
+
+
 function sendMessage() {
     const messageText = messageInput.value.trim();
     if (messageText !== "") {
@@ -20,6 +22,16 @@ messageInput.addEventListener('keypress', function (e) {
     }
 });
 
+
+
+
+
+
+        
+
+        
+
+        
             
 
         
