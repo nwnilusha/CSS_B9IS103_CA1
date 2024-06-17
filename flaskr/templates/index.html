@@ -1,24 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+        integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+        crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
     <title>Chat Website</title>
 </head>
+
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            Chat Website
-        </div>
-        <div class="chat-messages" id="chat-messages">
-            <!-- Messages will appear here -->
-        </div>
-        <div class="chat-input">
-            <input type="text" id="message-input" placeholder="Type a message..." />
-            <button onclick="sendMessage()">Send</button>
+    <div id="landing">
+        <input type="text" id="username" placeholder="Username">
+        <button id="join-btn">JOIN</button>
+    </div>
+
+    <div id="chat" style="display:none;">
+        <div class="chat-container">
+            <div class="chat-header">
+                Chat Website
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <ul id="chat-msg">
+                </ul>
+            </div>
+            <div class="chat-input">
+                <select id="friends" name="friends">Friends</select>
+                <input type="text" id="message-input" placeholder="Type a message..." />
+                <button onclick="sendMessage()">Send</button>
+            </div>
         </div>
     </div>
+    <script type="text/javascript" charset="utf-8">
+
+        const socket = io({ autoConnect: false });
+        let privateKey, publicKey;
+        const clientKeys = {};
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            publicKey = await generateRSAKeyPair()
+        })
+
+        document.getElementById("join-btn").addEventListener("click", async function () {
+            let username = document.getElementById("username").value;
+
+            socket.connect();
+            // const clientPublicKey = await generateRSAKeyPair()
+            const clientPublicKey = "Testing Key";
+
+            socket.on("connect", function () {
+                socket.emit('user_join', {recipient: username, publicKey: publicKey});
+                
+            })
+
+            document.getElementById("chat").style.display = "block";
+            document.getElementById("landing").style.display = "none";
+        })
+
+        document.getElementById("message-input").addEventListener("keyup", function (event) {
+            if (event.key == "Enter") {
+                let message = document.getElementById("message-input").value;
+                socket.emit("new_message", message)
+                document.getElementById("message-input").value = ""
+            }
+        })
+
+        socket.on("chat", function (data) {
+            let ul = document.getElementById("chat-msg");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(data["username"] + " : " + data["message"]));
+            ul.appendChild(li);
+            ul.scrolltop = ul.scrollHeight;
+        })
+
+        socket.on("allUsers", function (data) {
+            clientKeys[data["username"]] = data["publicKey"];
+            console.log(data["username"])
+            console.log(data["publicKey"])
+            loadFriends();
+        })
+
+        async function generateRSAKeyPair() {
+            const keyPair = await window.crypto.subtle.generateKey(
+                {
+                    name: "RSA-OAEP",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+                    hash: "SHA-256"
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+            privateKey = keyPair.privateKey;
+            return publicKey;
+        }
+
+        function loadFriends() {
+            var select = document.getElementById("friends");
+            for(const [user, key] of Object.entries(clientKeys)) {
+                console.log(user);
+                var option = document.createElement('option');
+                option.text = option.value = user;
+                select.add(option, 0);
+    }
+        }
+
+
+    </script>
+
 </body>
+
 </html>
