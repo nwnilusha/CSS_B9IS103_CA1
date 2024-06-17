@@ -1,3 +1,5 @@
+import secrets
+import string
 from flask import Flask, render_template
 from flask_socketio import SocketIO
 from flask_socketio import emit
@@ -5,9 +7,13 @@ from flask import request
 
 users = {}
 
+def generate_secret_key(length=32):
+    alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SECRET_KEY'] = 'secret_key'
+app.config['SECRET_KEY'] = generate_secret_key()
 socketio = SocketIO(app)
 
 @app.route("/")#URL leading to method
