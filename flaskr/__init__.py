@@ -6,6 +6,8 @@ from flask_socketio import emit
 from flask import request
 
 users = {}
+userKeys = {}
+broadcastKeys = {}
 
 def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
@@ -25,17 +27,21 @@ def handle_connect(data):
     print('Client Connected')
 
 @socketio.on('user_join')
-def handle_user_join(username):
-    print(f"User {username} Joined!")
-    users[username] = request.sid
+def handle_user_join(data):
+    print(f"User {data['recipient']} Joined!")
+    users[request.sid] = data['recipient']
+    userKeys[request.sid] = data['publicKey']
+    broadcastKeys[data['recipient']] = data['publicKey']
+    emit("allUsers", {"username": data['recipient'], "publicKey": data['publicKey']}, broadcast=True)
+    print(data['publicKey'])
 
 @socketio.on('new_message')
 def handle_new_message(message):
     print(f"New Message : {message}")
     username = None
     for user in users:
-        if users[user] == request.sid:
-            username = user
+        if user == request.sid:
+            username = users[request.sid]
     emit("chat", {"message": message, "username": username}, broadcast=True)
 
 if __name__ == "__main__":
