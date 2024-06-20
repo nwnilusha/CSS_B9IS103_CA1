@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Buzz - Signup</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-login.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Go Buzz</h1>
+    </header>
+    <div class="container">
+        <div class="card">
+            <h2>SignUp</h2>
+            <form id="signup-form" class="signup-form" action="{{ url_for('signup') }}" method="post">
+                <label class="form-label">Email Address</label>
+                <input class="form-input" type="email" name="email" id="email" required>
+                <input class="form-submit btn" type="submit" value="SignUp">
+            </form>
+        </div>
+    </div>
+</body>
+</html>
