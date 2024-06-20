@@ -7,6 +7,7 @@ from flask import request
 
 clients = {}
 broadcastKeys = {}
+allClients = {}
 
 def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
@@ -30,16 +31,17 @@ def handle_user_join(data):
     print(f"User {data['recipient']} Joined!")
     clients[data['recipient']] = request.sid
     broadcastKeys[data['recipient']] = data['publicKey']
+    allClients[request.sid] = data['recipient']
     # emit("allUsers", {"username": data['recipient'], "publicKey": data['publicKey']}, broadcast=True)
     emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
     print(data['publicKey'])
 
 @socketio.on('message')
 def handle_message(data):
-    recipient = data['recipient']
+    recipient = data['recipient_name']
     if recipient in clients:
         recipient_sid = clients[recipient]
-        emit('message', {'message': data['message'], 'sender_sid': request.sid}, room=recipient_sid)
+        emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
     else:
         print('Recipient not connected.')
 

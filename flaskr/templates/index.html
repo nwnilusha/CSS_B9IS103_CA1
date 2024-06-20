@@ -28,11 +28,11 @@
                 <ul id="chat-msg">
                 </ul>
             </div>
-            <div class="chat-input">
-                <select id="friends" name="friends">Friends</select>
+            <div class="chat-input">   
                 <input type="text" id="message-input" placeholder="Type a message..." />
                 <button id="send" onclick="sendMessage()">Send</button>
             </div>
+            <select id="clients" name="clients">Friends</select>
         </div>
     </div>
     <script type="text/javascript" charset="utf-8">
@@ -40,12 +40,14 @@
         const socket = io({ autoConnect: false });
         let privateKey, publicKey;
         var clientKeys = {};
+        var username, chatClient;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            publicKey = await generateRSAKeyPair()
+            //publicKey = await generateRSAKeyPair()
+            publicKey = "abc"
 
             document.getElementById("join-btn").addEventListener("click", async function () {
-                let username = document.getElementById("username").value;
+                username = document.getElementById("username").value;
 
                 socket.connect();
                 // const clientPublicKey = await generateRSAKeyPair()
@@ -61,23 +63,24 @@
             })
 
             document.getElementById("message-input").addEventListener("keyup", function (event) {
-                if (event.key == "Enter") {
-                    let message = document.getElementById("message-input").value;
-                    socket.emit("new_message", message)
-                    document.getElementById("message-input").value = ""
-                }
+                sendMessage()
             })
 
-            socket.on("chat", function (data) {
+            socket.on('message', async (data) => {
+                //const decryptedMessage = await decryptMessage(privateKey, data.message);
+                //console.log(`Message from ${data.sender_sid}:`, decryptedMessage);
                 let ul = document.getElementById("chat-msg");
                 let li = document.createElement("li");
-                li.appendChild(document.createTextNode(data["username"] + " : " + data["message"]));
+                li.appendChild(document.createTextNode(data["sender"] + " : " + data["message"]));
                 ul.appendChild(li);
                 ul.scrolltop = ul.scrollHeight;
-            })
+            });
 
             socket.on("allUsers", function (data) {
+
                 clientKeys = data["allUserKeys"];
+                console.log(username);
+                delete clientKeys[username];
                 loadFriends();
             })
 
@@ -98,12 +101,13 @@
             }
 
             function loadFriends() {
-                var select = document.getElementById("friends");
+                var availableClients = document.getElementById("clients");
                 for (const [user, key] of Object.entries(clientKeys)) {
-                    console.log(user);
+                    console.log(key);
                     var option = document.createElement('option');
                     option.text = option.value = user;
-                    select.add(option, 0);
+                    
+                    availableClients.add(option, 0);
                 }
             }
 
@@ -140,17 +144,28 @@
             }
 
             document.getElementById('send').onclick = async () => {
-                const message = document.getElementById('message').value;
-                const recipientSid = document.getElementById('recipient_sid').value;
-                const recipientPublicKey = clientKeys[recipientSid];
+                sendMessage()
+            };
+
+            function sendMessage() {
+                const clientMessage = document.getElementById('message-input').value;
+                const recipient = document.getElementById('clients').value;
+                const recipientPublicKey = clientKeys[recipient];
 
                 if (recipientPublicKey) {
-                    const encryptedMessage = await encryptMessage(recipientPublicKey, message);
-                    socket.emit('message', {recipient_sid: recipientSid, message: encryptedMessage});
+                    document.getElementById("message-input").value = ""
+                    //const encryptedMessage = await encryptMessage(recipientPublicKey, clientMessage);
+                    socket.emit('message', {recipient_name: recipient, message: clientMessage});
+
+                    let ul = document.getElementById("chat-msg");
+                    let li = document.createElement("li");
+                    li.appendChild(document.createTextNode(username + " : " + clientMessage));
+                    ul.appendChild(li);
+                    ul.scrolltop = ul.scrollHeight;
                 } else {
                     console.error('Recipient public key not found');
                 }
-            };
+            }
         })
 
 
