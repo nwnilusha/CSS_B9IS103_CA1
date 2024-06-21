@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             isCurrentUser = true;
             let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
-            li.appendChild(document.createTextNode(username + " : " + clientMessage));
+            li.appendChild(document.createTextNode("Me : " + clientMessage));
             if (isCurrentUser) {
                 li.classList.add("right-align");
             } else {
