@@ -1,80 +1,49 @@
-from flask import Flask, render_template, g, jsonify
-from . import db
-from flask import request, session, redirect, url_for
 import secrets
-import json
 import string
-import logging
-from .db import get_db
-from flask_bcrypt import Bcrypt
-from flask_bcrypt import check_password_hash
-
-def generate_secret_key(length=32):
-    alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
-
-def create_app():
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = generate_secret_key()
-
-    app.config['MYSQL_HOST'] = 'localhost'
-    app.config['MYSQL_USER'] = 'root'
-    app.config['MYSQL_PASSWORD'] = 'password'
-    app.config['MYSQL_DB'] = 'GOBUZZ'
+from flask import Flask, render_template
+from flask_socketio import SocketIO
+from flask_socketio import emit
+from flask import request
 
 users = {}
 userKeys = {}
 broadcastKeys = {}
 
+def generate_secret_key(length=32):
+    alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
 app.config['SECRET_KEY'] = generate_secret_key()
-# socketio = SocketIO(app)
+socketio = SocketIO(app)
 
-@app.route('/index')
+@app.route("/")#URL leading to method
 def index():
-    # Replace with actual logic for your index page
     return render_template('index.html')
 
-@app.route('/', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+@socketio.on('connect')
+def handle_connect(data):
+    print('Client Connected')
 
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('SELECT username FROM User WHERE username=%s AND password=%s', (username, password))
-        record = cursor.fetchone()
-        cursor.close()
+@socketio.on('user_join')
+def handle_user_join(data):
+    print(f"User {data['recipient']} Joined!")
+    users[request.sid] = data['recipient']
+    userKeys[request.sid] = data['publicKey']
+    broadcastKeys[data['recipient']] = data['publicKey']
+    emit("allUsers", {"username": data['recipient'], "publicKey": data['publicKey']}, broadcast=True)
+    print(data['publicKey'])
 
-        if record:
-            session['loggedin'] = True
-            session['username'] = username
-            return redirect(url_for('index'))  # Redirect to your index page or any other page
-        else:
-            msg = 'Incorrect Username or Password'
-            return render_template('login.html', msg=msg)
-    else:
-        return render_template('login.html')
-
-@app.route('/goBackToLogin', methods=['GET', 'POST'])
-def goBackToLogin():
-    return render_template('login.html')
-
-
-
-
-@app.route('/signup', methods=['GET'])
-def signup():
-    return render_template('signup.html')
-
-@app.teardown_appcontext
-def close_db(error):
-    db.close_db()
-
-    return app
+@socketio.on('new_message')
+def handle_new_message(message):
+    print(f"New Message : {message}")
+    username = None
+    for user in users:
+        if user == request.sid:
+            username = users[request.sid]
+    emit("chat", {"message": message, "username": username}, broadcast=True)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port='8080')
+    # app.run(host='0.0.0.0', port='8080') # indent this line
+    socketio.run(app) # indent this line
