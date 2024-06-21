@@ -63,3 +63,27 @@ body {
     color: #fff;
     align-self: flex-end;
 }
+
+#chat-msg {
+    list-style-type: none; /* Remove bullet points */
+    padding: 0;
+}
+
+#chat-msg li {
+    margin: 5px 0; /* Add some spacing between messages */
+    padding: 10px; /* Add some padding */
+    border-radius: 5px; /* Rounded corners */
+    max-width: 60%; /* Limit the width of the message */
+    word-wrap: break-word; /* Break long words to fit within the box */
+}
+
+#chat-msg li.left-align {
+    text-align: left; /* Align text to the left */
+    background-color: #f1f1f1; /* Background color for the message bubble */
+}
+
+#chat-msg li.right-align {
+    text-align: right; /* Align text to the right */
+    background-color: #d1e7dd; /* Different background color for the message bubble */
+    margin-left: auto; /* Align the message to the right side */
+}

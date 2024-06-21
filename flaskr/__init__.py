@@ -5,9 +5,9 @@ from flask_socketio import SocketIO
 from flask_socketio import emit
 from flask import request
 
-users = {}
-userKeys = {}
+clients = {}
 broadcastKeys = {}
+allClients = {}
 
 def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
@@ -29,19 +29,29 @@ def handle_connect(data):
 @socketio.on('user_join')
 def handle_user_join(data):
     print(f"User {data['recipient']} Joined!")
-    users[request.sid] = data['recipient']
-    userKeys[request.sid] = data['publicKey']
+    clients[data['recipient']] = request.sid
     broadcastKeys[data['recipient']] = data['publicKey']
-    emit("allUsers", {"username": data['recipient'], "publicKey": data['publicKey']}, broadcast=True)
+    allClients[request.sid] = data['recipient']
+    # emit("allUsers", {"username": data['recipient'], "publicKey": data['publicKey']}, broadcast=True)
+    emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
     print(data['publicKey'])
+
+@socketio.on('message')
+def handle_message(data):
+    recipient = data['recipient_name']
+    if recipient in clients:
+        recipient_sid = clients[recipient]
+        emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
+    else:
+        print('Recipient not connected.')
 
 @socketio.on('new_message')
 def handle_new_message(message):
     print(f"New Message : {message}")
     username = None
-    for user in users:
+    for user in clients:
         if user == request.sid:
-            username = users[request.sid]
+            username = clients[request.sid]
     emit("chat", {"message": message, "username": username}, broadcast=True)
 
 if __name__ == "__main__":
