@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Buzz - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-login.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Go Buzz</h1>
+    </header>
+    <div class="container">
+        <div class="card">
+            <h2>Login Page</h2>
+            <form id="login-form" class="login-form" action="{{ url_for('login') }}" method="post" onsubmit="return validateLogin()">
+                <label class="form-label">Username</label>
+                <input class="form-input" type="text" name="username" id="username">
+                <label class="form-label">Password</label>
+                <input class="form-input" type="password" name="password" id="password">
+                <input class="form-submit btn" type="submit" value="Login">
+                {% if msg %}
+                <p style="color: red;">{{ msg }}</p>
+                {% endif %}
+            </form>
+            <form action="{{ url_for('signup') }}" method="get">
+                <input class="form-submit btn signup-btn" type="submit" value="Signup">
+            </form>
+            <form action="{{ url_for('google_login') }}" method="get">
+                <input class="form-submit btn google-btn" type="submit" value="Login with Google">
+            </form>
+        </div>
+    </div>
+    <script>
+        function validateLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username === '' || password === '') {
+                alert('Username and Password are required for login.');
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
