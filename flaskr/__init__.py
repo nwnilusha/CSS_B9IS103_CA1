@@ -2,6 +2,7 @@ import secrets
 import string
 from flask import Flask, render_template, request, session, redirect, url_for, g, flash
 from flask_bcrypt import Bcrypt
+from authlib.integrations.flask_client import OAuth
 import mysql.connector
 from mysql.connector import Error, IntegrityError
 from flask_socketio import SocketIO, emit
@@ -40,6 +41,22 @@ def create_app():
     app.config['MYSQL_PASSWORD'] = 'password'
     app.config['MYSQL_DB'] = 'GOBUZZ'
 
+    # Google OAuth configuration
+    app.config['GOOGLE_CLIENT_ID'] = '484213283363-0lr7vmgdk81h02f8e9p8pgalq1n9ov6v.apps.googleusercontent.com'
+    app.config['GOOGLE_CLIENT_SECRET'] = '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'
+
+    oauth = OAuth(app)
+    oauth.register(
+        name='google',
+        client_id=app.config['GOOGLE_CLIENT_ID'],
+        client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+        authorize_url='https://accounts.google.com/o/oauth2/auth',
+        access_token_url='https://oauth2.googleapis.com/token',
+        userinfo_endpoint='https://www.googleapis.com/oauth2/v3/userinfo',
+        jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
+        client_kwargs={'scope': 'openid profile email'},
+    )
+
     socketio.init_app(app) 
     bcrypt = Bcrypt(app)
 
@@ -69,6 +86,33 @@ def create_app():
                 return render_template('login.html', msg=msg)
         else:
             return render_template('login.html', msg=msg)
+
+    @app.route('/google/login')
+    def google_login():
+        state = secrets.token_urlsafe(32)
+        session['google_oauth_state'] = state
+        redirect_uri = url_for('google_callback', _external=True)
+        print(f"Redirect URI: {redirect_uri}")  
+        return oauth.google.authorize_redirect(redirect_uri, state=state)
+
+    @app.route('/google/callback')
+    def google_callback():
+        state_in_request = request.args.get('state')
+        state_in_session = session.get('google_oauth_state')
+        print(f"State in request: {state_in_request}")
+        print(f"State in session: {state_in_session}")
+
+        if state_in_request != state_in_session:
+            return 'Error: State mismatch', 400
+
+        token = oauth.google.authorize_access_token()
+        resp = oauth.google.get('https://www.googleapis.com/oauth2/v3/userinfo')
+        user_info = resp.json()
+
+        session['profile'] = user_info
+        session.permanent = True
+
+        return redirect(url_for('index'))
 
     @app.route('/signup', methods=['GET', 'POST'])
     def signup():
