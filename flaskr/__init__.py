@@ -62,7 +62,13 @@ def create_app():
 
     @app.route("/index")
     def index():
-        return render_template('index.html')
+        if 'loggedin' in session:
+            username = session.get('username')
+        elif 'profile' in session:
+            username = session['profile'].get('email')
+        else:
+            return redirect(url_for('login'))
+        return render_template('index.html', username=username)
 
     @app.route('/', methods=['GET', 'POST'])
     def login():
@@ -77,7 +83,7 @@ def create_app():
             record = cursor.fetchone()
             cursor.close()
 
-            if record and bcrypt.check_password_hash(record[3], password):  # Password is the fourth column
+            if record and bcrypt.check_password_hash(record[3], password):
                 session['loggedin'] = True
                 session['username'] = username
                 return redirect(url_for('index'))
@@ -99,8 +105,6 @@ def create_app():
     def google_callback():
         state_in_request = request.args.get('state')
         state_in_session = session.get('google_oauth_state')
-        print(f"State in request: {state_in_request}")
-        print(f"State in session: {state_in_session}")
 
         if state_in_request != state_in_session:
             return 'Error: State mismatch', 400
@@ -111,6 +115,23 @@ def create_app():
 
         session['profile'] = user_info
         session.permanent = True
+
+        username = user_info['email']
+
+        # Check if the user already exists in the database
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT * FROM USER WHERE email=%s', (username,))
+        record = cursor.fetchone()
+
+        # If the user does not exist, insert the user
+        if not record:
+            cursor.execute('INSERT INTO USER (email) VALUES (%s)', (username,))
+            db.commit()
+        cursor.close()
+
+        session['loggedin'] = True
+        session['username'] = username
 
         return redirect(url_for('index'))
 
@@ -166,6 +187,13 @@ def create_app():
             if user == request.sid:
                 username = clients[request.sid]
         emit("chat", {"message": message, "username": username}, broadcast=True)
+
+    @app.route('/logout')
+    def logout():
+        session.pop('loggedin', None)
+        session.pop('username', None)
+        session.pop('profile', None)
+        return redirect(url_for('login'))
 
     @app.teardown_appcontext
     def teardown_db(exception):
