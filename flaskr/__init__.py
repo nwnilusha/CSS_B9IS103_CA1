@@ -1,10 +1,10 @@
 import secrets
 import string
 from flask import Flask, render_template, request, session, redirect, url_for, g, flash
-from flask_bcrypt import Bcrypt
+from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
-from mysql.connector import Error, IntegrityError
+import re
 from flask_socketio import SocketIO, emit
 
 clients = {}
@@ -83,7 +83,7 @@ def create_app():
             record = cursor.fetchone()
             cursor.close()
 
-            if record and bcrypt.check_password_hash(record[3], password):
+            if record and check_password_hash(record[3], password):
                 session['loggedin'] = True
                 session['username'] = username
                 return redirect(url_for('index'))
@@ -116,46 +116,52 @@ def create_app():
         session['profile'] = user_info
         session.permanent = True
 
-        username = user_info['email']
-
-        # Check if the user already exists in the database
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('SELECT * FROM USER WHERE email=%s', (username,))
-        record = cursor.fetchone()
-
-        # If the user does not exist, insert the user
-        if not record:
-            cursor.execute('INSERT INTO USER (email) VALUES (%s)', (username,))
-            db.commit()
-        cursor.close()
-
+        email = user_info['email']
         session['loggedin'] = True
-        session['username'] = username
+        session['username'] = email
 
         return redirect(url_for('index'))
 
     @app.route('/signup', methods=['GET', 'POST'])
     def signup():
-        msg = ''
         if request.method == 'POST':
-            email = request.form['email']
+            username = request.form['username']
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
 
-            try:
-                db = get_db()
-                cursor = db.cursor()
-                cursor.execute('INSERT INTO User (email) VALUES (%s)', (email,))
-                db.commit()
+            # Validate password complexity
+            password_pattern = re.compile(r'^(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$')
+            if not password_pattern.match(password):
+                msg = 'Password must be at least 8 characters long and contain at least one special character.'
+                return render_template('signup.html', msg=msg)
+
+            # Validate password and confirm_password match
+            if password != confirm_password:
+                flash('Passwords do not match.')
+                return render_template('signup.html', msg=msg)
+
+            # Hash the password before saving to database
+            hashed_password = generate_password_hash(password)
+
+            # Check if username already exists in database
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute('SELECT * FROM USER WHERE username = %s', (username,))
+            existing_user = cursor.fetchone()
+            if existing_user:
+                msg = 'Username already exists. Please choose a different username.'
                 cursor.close()
-                return redirect(url_for('login'))
-            except IntegrityError:
-                msg = 'Email address already exists. Please use a different email.'
-                return render_template('signup.html', msg=msg)
-            except Error as e:
-                msg = f'An error occurred: {e}'
                 return render_template('signup.html', msg=msg)
 
-        return render_template('signup.html', msg=msg)
+            insert_query = 'INSERT INTO USER (username, password) VALUES (%s, %s)'
+            cursor.execute(insert_query, (username, hashed_password))
+            db.commit()
+            cursor.close()
+
+            msg = 'User created successfully!'
+            return redirect(url_for('login'))
+
+        return render_template('signup.html')
 
     @socketio.on('connect')
     def handle_connect():
@@ -192,7 +198,8 @@ def create_app():
     def logout():
         session.pop('loggedin', None)
         session.pop('username', None)
-        session.pop('profile', None)
+        session.pop('profile', None) 
+        session.pop('google_oauth_state', None)
         return redirect(url_for('login'))
 
     @app.teardown_appcontext
