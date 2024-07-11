@@ -5,7 +5,7 @@ var username, chatClient;
 var isCurrentUser = true;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    //publicKey = await generateRSAKeyPair()
+    //publicKey = await generateRSAKeyPair()   
     publicKey = "abc"
 
     document.getElementById("join-btn").addEventListener("click", async function () {
@@ -35,11 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let ul = document.getElementById("chat-msg");
         let li = document.createElement("li");
         li.appendChild(document.createTextNode(data["sender"] + " : " + data["message"]));
-        if (isCurrentUser) {
-            li.classList.add("right-align");
-        } else {
-            li.classList.add("left-align");
-        }
+        li.classList.add("left-align");
         ul.appendChild(li);
         ul.scrolltop = ul.scrollHeight;
     });
@@ -51,6 +47,66 @@ document.addEventListener('DOMContentLoaded', async () => {
         delete clientKeys[username];
         loadFriends();
     })
+
+    function loadFriends() {
+        const friendsList = document.getElementById("friends-list");
+        friendsList.innerHTML = "";
+        for (const [user, key] of Object.entries(clientKeys)) {
+            let li = document.createElement("li");
+            li.innerHTML = `<div class="status-indicator"></div><div class="username">${user}</div>`;
+            li.addEventListener("click", () => {
+                chatClient = user;
+                let chatMessages = document.getElementById("chat-msg");
+                let chatStatusMessage = document.createElement("li");
+                chatStatusMessage.classList.add("left-align");
+                chatStatusMessage.innerText = `${user} is available to chat`;
+                chatMessages.appendChild(chatStatusMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+            friendsList.appendChild(li);
+        }
+    }
+
+    document.getElementById('send').onclick = () => {
+        sendMessage();
+    };
+
+    document.getElementById('logout-btn').onclick = () => {
+        logout();
+    };
+
+    function sendMessage() {
+        const clientMessage = document.getElementById('message-input').value;
+        if (chatClient) {
+            document.getElementById("message-input").value = "";
+            socket.emit('message', { recipient_name: chatClient, message: clientMessage });
+
+            isCurrentUser = true;
+            let ul = document.getElementById("chat-msg");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode("Me : " + clientMessage));
+            li.classList.add("right-align");
+            ul.appendChild(li);
+            ul.scrollTop = ul.scrollHeight;
+        } else {
+            console.error('No chat client selected');
+        }
+    }
+
+    function logout() {
+        fetch('/logout', {
+            method: 'GET',
+            credentials: 'same-origin'
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                console.error("Logout failed");
+            }
+        }).catch(error => {
+            console.error("Logout error:", error);
+        });
+    }
 
     async function generateRSAKeyPair() {
         const keyPair = await window.crypto.subtle.generateKey(
@@ -66,17 +122,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
         privateKey = keyPair.privateKey;
         return publicKey;
-    }
-
-    function loadFriends() {
-        var availableClients = document.getElementById("clients");
-        for (const [user, key] of Object.entries(clientKeys)) {
-            console.log(key);
-            var option = document.createElement('option');
-            option.text = option.value = user;
-
-            availableClients.add(option, 0);
-        }
     }
 
     async function encryptMessage(publicKey, message) {
@@ -111,33 +156,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         return new TextDecoder().decode(decryptedMessage);
     }
 
-    document.getElementById('send').onclick = async () => {
-        sendMessage()
-    };
-
-    function sendMessage() {
-        const clientMessage = document.getElementById('message-input').value;
-        const recipient = document.getElementById('clients').value;
-        const recipientPublicKey = clientKeys[recipient];
-
-        if (recipientPublicKey) {
-            document.getElementById("message-input").value = ""
-            //const encryptedMessage = await encryptMessage(recipientPublicKey, clientMessage);
-            socket.emit('message', { recipient_name: recipient, message: clientMessage });
-
-            isCurrentUser = true;
-            let ul = document.getElementById("chat-msg");
-            let li = document.createElement("li");
-            li.appendChild(document.createTextNode("Me : " + clientMessage));
-            if (isCurrentUser) {
-                li.classList.add("right-align");
-            } else {
-                li.classList.add("left-align");
-            }
-            ul.appendChild(li);
-            ul.scrolltop = ul.scrollHeight;
-        } else {
-            console.error('Recipient public key not found');
+    function base64ToArrayBuffer(base64) {
+        const binaryString = window.atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
         }
+        return bytes.buffer;
     }
-})
+
+    function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+});

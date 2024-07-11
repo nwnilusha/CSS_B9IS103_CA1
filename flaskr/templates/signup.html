@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Go Buzz - Signup</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style-login.css') }}">
+    <style>
+        .back-arrow {
+            display: inline-block;
+            margin-bottom: 20px;
+            cursor: pointer;
+            color: #000; 
+            text-decoration: none;
+            font-size: 24px; 
+        }
+        .back-arrow:hover {
+            color: red;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -12,8 +25,11 @@
     </header>
     <div class="container">
         <div class="card">
+            <a href="{{ url_for('login') }}" class="back-arrow">&#8592;</a> 
             <h2>SignUp</h2>
             <form id="signup-form" class="signup-form" action="{{ url_for('signup') }}" method="post">
+                <label class="form-label">User Name</label>
+                <input class="form-input" type="username" name="username" id="username" required>
                 <label class="form-label">Email</label>
                 <input class="form-input" type="email" name="email" id="email" required>
                 <input class="form-submit btn" type="submit" value="SignUp">
