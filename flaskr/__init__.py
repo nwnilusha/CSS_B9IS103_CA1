@@ -1,11 +1,17 @@
 import secrets
 import string
+import smtplib  # Import smtplib for email sending
+from email.mime.text import MIMEText  # Import MIMEText for email content
+from email.mime.multipart import MIMEMultipart  # Import MIMEMultipart for email structure
 from flask import Flask, render_template, request, session, redirect, url_for, g, flash
 from flask_bcrypt import Bcrypt
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
 from mysql.connector import Error, IntegrityError
 from flask_socketio import SocketIO, emit
+from itsdangerous import URLSafeTimedSerializer
+from dotenv import load_dotenv
+import os
 
 clients = {}
 broadcastKeys = {}
@@ -31,6 +37,30 @@ def close_db(e=None):
         db.close()
 
 socketio = SocketIO()
+
+def send_verification_email(email, token):
+    sender_email = "mdashrafuddin272@gmail.com"
+    receiver_email = email
+    password = "your_email_password"  # replace with the actual password or use environment variables for security
+
+    message = MIMEMultipart("alternative")
+    message["Subject"] = "Email Verification"
+    message["From"] = sender_email
+    message["To"] = receiver_email
+
+    text = f"Please verify your email by clicking the following link: http://localhost:8080/verify/{token}"
+    part = MIMEText(text, "plain")
+
+    message.attach(part)
+
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, message.as_string())
+        server.close()
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 def create_app():
     app = Flask(__name__)

@@ -1,0 +1,7 @@
+Flask
+Flask-Bcrypt
+Authlib
+mysql-connector-python
+Flask-SocketIO
+itsdangerous
+python-dotenv
