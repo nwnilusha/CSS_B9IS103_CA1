@@ -118,22 +118,28 @@ def create_app():
     def signup():
         msg = ''
         if request.method == 'POST':
+            username = request.form['username']
             email = request.form['email']
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
+
+            if password != confirm_password:
+                msg = 'Passwords do not match!'
+                return render_template('signup.html', msg=msg)
+
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
             try:
                 db = get_db()
                 cursor = db.cursor()
-                cursor.execute('INSERT INTO User (email) VALUES (%s)', (email,))
+                cursor.execute('INSERT INTO User (username, email, password) VALUES (%s, %s, %s)', (username, email, hashed_password))
                 db.commit()
                 cursor.close()
                 return redirect(url_for('login'))
             except IntegrityError:
-                msg = 'Email address already exists. Please use a different email.'
-                return render_template('signup.html', msg=msg)
+                msg = 'Username or email address already exists. Please use a different username or email.'
             except Error as e:
                 msg = f'An error occurred: {e}'
-                return render_template('signup.html', msg=msg)
-
         return render_template('signup.html', msg=msg)
 
     @socketio.on('connect')
