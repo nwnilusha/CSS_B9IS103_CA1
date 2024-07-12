@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return publicKey;
     }
 
+    // Encrypting the client message
     async function encryptMessage(publicKey, message) {
         const importedPublicKey = await window.crypto.subtle.importKey(
             "spki",
@@ -157,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return arrayBufferToBase64(encryptedMessage);
     }
 
+    // Decrypt the received encrypted message
     async function decryptMessage(privateKey, encryptedMessage) {
         const decryptedMessage = await window.crypto.subtle.decrypt(
             {
