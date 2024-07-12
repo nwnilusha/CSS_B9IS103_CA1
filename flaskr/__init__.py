@@ -183,29 +183,37 @@ def create_app():
             hashed_password = generate_password_hash(password)
 
             # Check if username already exists in database
-            '''db = get_db()
-            cursor = db.cursor()
-            cursor.execute('SELECT * FROM USER WHERE username = %s', (username,))            
-
-            existing_user = cursor.fetchone()
-            if existing_user:
-                msg = 'Username already exists. Please choose a different username.'
-                cursor.close()
-                return render_template('signup.html', msg=msg)
-
-            insert_query = 'INSERT INTO USER (username, password) VALUES (%s, %s)'
-            cursor.execute(insert_query, (username, hashed_password))
-            db.commit()
-            cursor.close()'''
-
             select_query = "SELECT * FROM USER WHERE username = %s"
-            db = g.get('db')
-            result = db.fetch_query(select_query, (username,))
-            print(f"TEST----> {result}")
+            db = None
+            try:
+                db = g.get('db')
 
-            msg = 'User created successfully!'
-            return redirect(url_for('login'))
+                if db is not None :
+                    result = db.fetch_query(select_query, (username,))
 
+                    if result:
+                        msg = 'Username already exists. Please choose a different username.'
+                    else:
+                        insert_query = 'INSERT INTO USER (username, password) VALUES (%s, %s)'
+                        result = db.execute_vquery(insert_query, username, hashed_password)
+                        print(f"result : {result}");
+                        if result >= 0:
+                            return redirect(url_for('login'))
+                        else:
+                            msg = 'User registration failure: DB error'
+
+                        return render_template('login.html', msg=msg)
+                else:
+                    print("DB connection is not created. Please check the connection string.")
+                    msg = "Database connectivity Error, Check the connection string"
+
+            except Exception as ex:
+                print(f"Exception occurred: {ex}")
+                msg = f"User registration failure: Exception occurred: {ex}"
+                db = None
+
+            if msg:
+                return render_template('login.html', msg=msg)
         return render_template('signup.html')
 
     @socketio.on('connect')
