@@ -14,28 +14,37 @@
 </head>
 
 <body>
-    <div id="landing">
-        <input type="text" id="username" placeholder="Username">
-        <button id="join-btn">JOIN</button>
+    <div id="landing" class="centered">
+        <div class="landing-container">
+            <input type="text" id="username" placeholder="Enter your username" value="{{ username }}">
+            <button id="join-btn">Join Chat</button>
+        </div>
     </div>
 
     <div id="chat" style="display:none;">
         <div class="chat-container">
             <div class="chat-header">
                 Chat Website
+                <button id="logout-btn">Logout</button>
             </div>
-            <div class="chat-messages" id="chat-messages">
-                <ul id="chat-msg">
-                </ul>
+            <div class="chat-content">
+                <div class="friends-list-container">
+                    <h3>Friends</h3>
+                    <ul id="friends-list">
+                        <!-- Friends will be listed here -->
+                    </ul>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <ul id="chat-msg">
+                    </ul>
+                </div>
             </div>
             <div class="chat-input">
-                <input type="text" id="message-input" placeholder="Type a message..." />
-                <button id="send" onclick="sendMessage()">Send</button>
+                <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
+                <button id="send">Send</button>
             </div>
-            <select id="clients" name="clients">Friends</select>
         </div>
     </div>
-
 </body>
 
 </html>

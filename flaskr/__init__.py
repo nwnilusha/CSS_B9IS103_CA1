@@ -1,10 +1,10 @@
 import secrets
 import string
 from flask import Flask, render_template, request, session, redirect, url_for, g, flash
-from flask_bcrypt import Bcrypt
+from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
-from mysql.connector import Error, IntegrityError
+import re
 from flask_socketio import SocketIO, emit
 
 clients = {}
@@ -62,7 +62,13 @@ def create_app():
 
     @app.route("/index")
     def index():
-        return render_template('index.html')
+        if 'loggedin' in session:
+            username = session.get('username')
+        elif 'profile' in session:
+            username = session['profile'].get('email')
+        else:
+            return redirect(url_for('login'))
+        return render_template('index.html', username=username)
 
     @app.route('/', methods=['GET', 'POST'])
     def login():
@@ -77,7 +83,7 @@ def create_app():
             record = cursor.fetchone()
             cursor.close()
 
-            if record and bcrypt.check_password_hash(record[3], password):  # Password is the fourth column
+            if record and check_password_hash(record[3], password):
                 session['loggedin'] = True
                 session['username'] = username
                 return redirect(url_for('index'))
@@ -99,8 +105,6 @@ def create_app():
     def google_callback():
         state_in_request = request.args.get('state')
         state_in_session = session.get('google_oauth_state')
-        print(f"State in request: {state_in_request}")
-        print(f"State in session: {state_in_session}")
 
         if state_in_request != state_in_session:
             return 'Error: State mismatch', 400
@@ -112,29 +116,52 @@ def create_app():
         session['profile'] = user_info
         session.permanent = True
 
+        email = user_info['email']
+        session['loggedin'] = True
+        session['username'] = email
+
         return redirect(url_for('index'))
 
     @app.route('/signup', methods=['GET', 'POST'])
     def signup():
-        msg = ''
         if request.method == 'POST':
-            email = request.form['email']
+            username = request.form['username']
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
 
-            try:
-                db = get_db()
-                cursor = db.cursor()
-                cursor.execute('INSERT INTO User (email) VALUES (%s)', (email,))
-                db.commit()
+            # Validate password complexity
+            password_pattern = re.compile(r'^(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$')
+            if not password_pattern.match(password):
+                msg = 'Password must be at least 8 characters long and contain at least one special character.'
+                return render_template('signup.html', msg=msg)
+
+            # Validate password and confirm_password match
+            if password != confirm_password:
+                flash('Passwords do not match.')
+                return render_template('signup.html', msg=msg)
+
+            # Hash the password before saving to database
+            hashed_password = generate_password_hash(password)
+
+            # Check if username already exists in database
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute('SELECT * FROM USER WHERE username = %s', (username,))
+            existing_user = cursor.fetchone()
+            if existing_user:
+                msg = 'Username already exists. Please choose a different username.'
                 cursor.close()
-                return redirect(url_for('login'))
-            except IntegrityError:
-                msg = 'Email address already exists. Please use a different email.'
-                return render_template('signup.html', msg=msg)
-            except Error as e:
-                msg = f'An error occurred: {e}'
                 return render_template('signup.html', msg=msg)
 
-        return render_template('signup.html', msg=msg)
+            insert_query = 'INSERT INTO USER (username, password) VALUES (%s, %s)'
+            cursor.execute(insert_query, (username, hashed_password))
+            db.commit()
+            cursor.close()
+
+            msg = 'User created successfully!'
+            return redirect(url_for('login'))
+
+        return render_template('signup.html')
 
     @socketio.on('connect')
     def handle_connect():
@@ -166,6 +193,14 @@ def create_app():
             if user == request.sid:
                 username = clients[request.sid]
         emit("chat", {"message": message, "username": username}, broadcast=True)
+
+    @app.route('/logout')
+    def logout():
+        session.pop('loggedin', None)
+        session.pop('username', None)
+        session.pop('profile', None) 
+        session.pop('google_oauth_state', None)
+        return redirect(url_for('login'))
 
     @app.teardown_appcontext
     def teardown_db(exception):
