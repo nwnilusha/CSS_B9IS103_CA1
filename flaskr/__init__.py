@@ -6,6 +6,8 @@ from authlib.integrations.flask_client import OAuth
 import mysql.connector
 import re
 from flask_socketio import SocketIO, emit
+from flaskr.config import Config
+from flaskr.db import Database
 
 clients = {}
 broadcastKeys = {}
@@ -15,7 +17,7 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-def get_db():
+'''def get_db():
     if 'db' not in g:
         g.db = mysql.connector.connect(
             host='localhost',
@@ -23,23 +25,45 @@ def get_db():
             password='password',
             database='GOBUZZ'
         )
-    return g.db
+    return g.db'''
 
-def close_db(e=None):
+'''def close_db(e=None):
     db = g.pop('db', None)
     if db is not None:
-        db.close()
+        db.close()'''
 
 socketio = SocketIO()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = generate_secret_key()
+    app.config.from_object(Config)
 
-    app.config['MYSQL_HOST'] = 'localhost'
-    app.config['MYSQL_USER'] = 'root'
-    app.config['MYSQL_PASSWORD'] = 'password'
-    app.config['MYSQL_DB'] = 'GOBUZZ'
+    #app.config['MYSQL_HOST'] = 'localhost'
+    #app.config['MYSQL_USER'] = 'root'
+    #app.config['MYSQL_PASSWORD'] = 'password'
+    #app.config['MYSQL_DB'] = 'GOBUZZ'
+
+    # create the db config
+    db_config = {
+        'user': app.config['MYSQL_USER'],
+        'password': app.config['MYSQL_PASSWORD'],
+        'host': app.config['MYSQL_HOST'],
+        'database': app.config['MYSQL_DB']
+    }
+
+    # pre-initiate the app, setup the database connection and make it available for globel context
+    @app.before_request
+    def before_request():
+        if 'db' not in g:
+            g.db = Database(db_config)
+            g.db.connect()
+
+    # disconnect the database at app teardown
+    @app.teardown_appcontext
+    def close_db_connection(exception):
+        db = g.pop('db', None)
+        if db is not None:
+            db.disconnect()
 
     # Google OAuth configuration
     app.config['GOOGLE_CLIENT_ID'] = '484213283363-0lr7vmgdk81h02f8e9p8pgalq1n9ov6v.apps.googleusercontent.com'
@@ -60,6 +84,7 @@ def create_app():
     socketio.init_app(app) 
     bcrypt = Bcrypt(app)
 
+    # Application's main page
     @app.route("/index")
     def index():
         if 'loggedin' in session:
@@ -77,21 +102,34 @@ def create_app():
             username = request.form['username']
             password = request.form['password']
 
-            db = get_db()
-            cursor = db.cursor()
-            cursor.execute('SELECT * FROM USER WHERE username=%s', (username,))
-            record = cursor.fetchone()
-            cursor.close()
+            select_query = "SELECT * FROM USER WHERE username=%s"
+            db = None
+            try:
+                db = g.get('db')
 
-            if record and check_password_hash(record[3], password):
-                session['loggedin'] = True
-                session['username'] = username
-                return redirect(url_for('index'))
-            else:
-                msg = 'Incorrect Username or Password'
-                return render_template('login.html', msg=msg)
+                if db is not None :
+                    result = db.fetch_query(select_query, (username,))
+                    print(f"TEST----> {result}")
+
+                    if result and check_password_hash(result[3], password):
+                        session['loggedin'] = True
+                        session['username'] = username
+                        return redirect(url_for('index'))
+                    else:
+                        msg = 'Incorrect Username or Password'
+                        return render_template('login.html', msg=msg)                    
+                else:
+                    print("DB connection is not created. Please check the connection string.")
+                    msg = "Database connectivity Error, Check the connection string"
+
+            except Exception as ex:
+                print(f"Exception occurred: {ex}")
+                msg = f"Exception occurred: {ex}"
+                db = None           
         else:
             return render_template('login.html', msg=msg)
+        
+        return render_template('login.html', msg=msg)
 
     @app.route('/google/login')
     def google_login():
@@ -128,6 +166,7 @@ def create_app():
             username = request.form['username']
             password = request.form['password']
             confirm_password = request.form['confirm_password']
+            msg = None
 
             # Validate password complexity
             password_pattern = re.compile(r'^(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$')
@@ -144,23 +183,37 @@ def create_app():
             hashed_password = generate_password_hash(password)
 
             # Check if username already exists in database
-            db = get_db()
-            cursor = db.cursor()
-            cursor.execute('SELECT * FROM USER WHERE username = %s', (username,))
-            existing_user = cursor.fetchone()
-            if existing_user:
-                msg = 'Username already exists. Please choose a different username.'
-                cursor.close()
-                return render_template('signup.html', msg=msg)
+            select_query = "SELECT * FROM USER WHERE username = %s"
+            db = None
+            try:
+                db = g.get('db')
 
-            insert_query = 'INSERT INTO USER (username, password) VALUES (%s, %s)'
-            cursor.execute(insert_query, (username, hashed_password))
-            db.commit()
-            cursor.close()
+                if db is not None :
+                    result = db.fetch_query(select_query, (username,))
 
-            msg = 'User created successfully!'
-            return redirect(url_for('login'))
+                    if result:
+                        msg = 'Username already exists. Please choose a different username.'
+                    else:
+                        insert_query = 'INSERT INTO USER (username, password) VALUES (%s, %s)'
+                        result = db.execute_vquery(insert_query, username, hashed_password)
+                        print(f"result : {result}");
+                        if result >= 0:
+                            return redirect(url_for('login'))
+                        else:
+                            msg = 'User registration failure: DB error'
 
+                        return render_template('login.html', msg=msg)
+                else:
+                    print("DB connection is not created. Please check the connection string.")
+                    msg = "Database connectivity Error, Check the connection string"
+
+            except Exception as ex:
+                print(f"Exception occurred: {ex}")
+                msg = f"User registration failure: Exception occurred: {ex}"
+                db = None
+
+            if msg:
+                return render_template('login.html', msg=msg)
         return render_template('signup.html')
 
     @socketio.on('connect')
@@ -202,9 +255,10 @@ def create_app():
         session.pop('google_oauth_state', None)
         return redirect(url_for('login'))
 
-    @app.teardown_appcontext
-    def teardown_db(exception):
-        close_db()
+    # comminting following method, refer to the method defined earlier.
+    #@app.teardown_appcontext
+    #def teardown_db(exception):
+    #    close_db()
 
     return app
 
