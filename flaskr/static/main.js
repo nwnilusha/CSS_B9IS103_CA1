@@ -24,9 +24,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById("landing").style.display = "none";
     })
 
-    document.getElementById("message-input").addEventListener("keyup", function (event) {
-        //sendMessage()
-    })
+    document.getElementById("message-input").addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
 
     socket.on('message', async (data) => {
         //const decryptedMessage = await decryptMessage(privateKey, data.message);
@@ -41,7 +43,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     socket.on("allUsers", function (data) {
-
         clientKeys = data["allUserKeys"];
         console.log(username);
         delete clientKeys[username];
@@ -53,10 +54,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         friendsList.innerHTML = "";
         for (const [user, key] of Object.entries(clientKeys)) {
             let li = document.createElement("li");
-            li.innerHTML = `<div class="status-indicator"></div><div class="username">${user}</div>`;
+            li.innerHTML = `
+                <div class="status-indicator"></div>
+                <div class="username">${user}</div>
+                <div class="last-active" id="last-active-${user}"></div>
+            `;
             li.addEventListener("click", () => {
                 chatClient = user;
-                let chatMessages = document.getElementById("chat-msg");
+                // Clear chat messages
+                const chatMessages = document.getElementById("chat-msg");
+                chatMessages.innerHTML = "";
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Display user selected for chat
                 let chatStatusMessage = document.createElement("li");
                 chatStatusMessage.classList.add("left-align");
                 chatStatusMessage.innerText = `${user} is available to chat`;
@@ -77,7 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function sendMessage() {
         const clientMessage = document.getElementById('message-input').value;
-        if (chatClient) {
+        if (chatClient && clientMessage.trim() !== "") {
             document.getElementById("message-input").value = "";
             socket.emit('message', { recipient_name: chatClient, message: clientMessage });
 
@@ -88,6 +98,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             li.classList.add("right-align");
             ul.appendChild(li);
             ul.scrollTop = ul.scrollHeight;
+        } else if (clientMessage.trim() === "") {
+            console.error('Empty message cannot be sent');
         } else {
             console.error('No chat client selected');
         }
