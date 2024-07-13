@@ -26,6 +26,11 @@
             <div class="chat-header">
                 Chat Website
                 <button id="logout-btn">Logout</button>
+                <!--<form action="{{ url_for('sendEmail') }}" method="get">-->
+                <form action="{{ url_for('composeEmail') }}" method="get">
+                    <input class="form-submit btn signup-btn" type="submit" value="Connect Request">
+                </form>
+                <button id="con-req-btn">Connect Request</button>
             </div>
             <div class="chat-content">
                 <div class="friends-list-container">
