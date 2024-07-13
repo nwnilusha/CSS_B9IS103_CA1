@@ -17,21 +17,6 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-'''def get_db():
-    if 'db' not in g:
-        g.db = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='password',
-            database='GOBUZZ'
-        )
-    return g.db'''
-
-'''def close_db(e=None):
-    db = g.pop('db', None)
-    if db is not None:
-        db.close()'''
-
 socketio = SocketIO()
 
 def create_app():
@@ -110,12 +95,20 @@ def create_app():
 
                 if db is not None :
                     result = db.fetch_query(select_query, (username,))
-                    print(f"TEST----> {result}")
+                    print(f"TEST----> {result[0]}")                    
 
-                    if result and check_password_hash(result[3], password):
-                        session['loggedin'] = True
-                        session['username'] = username
-                        return redirect(url_for('index'))
+                    if result:
+                        for result_ob in result:
+                            # remove the debug lines later
+                            print(f"test----> {result_ob['password']}")
+                            print(f"TEST pwd----> {password}")
+                            print(f"TEST pwd----> {generate_password_hash(password)}")
+                            if check_password_hash(result_ob['password'], password):
+                                session['loggedin'] = True
+                                session['username'] = username
+                                return redirect(url_for('index'))
+                            else:
+                                msg="Login failure"
                     else:
                         msg = 'Incorrect Username or Password'
                         return render_template('login.html', msg=msg)                    
