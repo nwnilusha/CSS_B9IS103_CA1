@@ -87,13 +87,14 @@ def create_app():
     # Application's main page
     @app.route("/index")
     def index():
-        if 'loggedin' in session:
-            username = session.get('username')
-        elif 'profile' in session:
-            username = session['profile'].get('email')
+        if session['username']:
+            userData = {
+                    'Username': session.get('username')
+                }
+            return render_template('index.html', userData=userData)
         else:
             return redirect(url_for('login'))
-        return render_template('index.html', username=username)
+        
 
     @app.route('/', methods=['GET', 'POST'])
     def login():

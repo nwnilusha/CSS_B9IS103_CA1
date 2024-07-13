@@ -13,15 +13,8 @@
     <title>Chat Website</title>
 </head>
 
-<body>
-    <div id="landing" class="centered">
-        <div class="landing-container">
-            <input type="text" id="username" placeholder="Enter your username" value="{{ username }}">
-            <button id="join-btn">Join Chat</button>
-        </div>
-    </div>
-
-    <div id="chat" style="display:none;">
+<body onload=initiateUser()>
+    <div id="chat">
         <div class="chat-container">
             <div class="chat-header">
                 Chat Website
@@ -31,7 +24,6 @@
                 <div class="friends-list-container">
                     <h3>Friends</h3>
                     <ul id="friends-list">
-                        <!-- Friends will be listed here -->
                     </ul>
                 </div>
                 <div class="chat-messages" id="chat-messages">
@@ -46,5 +38,10 @@
         </div>
     </div>
 </body>
+<script type="text/javascript">
+    var userData = {{ userData | tojson }};
+    console.log(userData.Username)
+
+</script>
 
 </html>
