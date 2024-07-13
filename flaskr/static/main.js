@@ -7,33 +7,57 @@ var isCurrentUser = true;
 document.addEventListener('DOMContentLoaded', async () => {
     //publicKey = await generateRSAKeyPair()   
     publicKey = "abc"
-
-    document.getElementById("join-btn").addEventListener("click", async function () {
-        username = document.getElementById("username").value;
-
-        socket.connect();
-        const clientPublicKey = await generateRSAKeyPair()
-        //const clientPublicKey = publicKey;
-
-        socket.on("connect", function () {
-            socket.emit('user_join', { recipient: username, publicKey: clientPublicKey });
-
-        })
-
-        document.getElementById("chat").style.display = "block";
-        document.getElementById("landing").style.display = "none";
-    })
+    document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
     document.getElementById("message-input").addEventListener("keypress", function (event) {
         if (event.key === "Enter") {
             sendMessage();
         }
     });
+
+    socket.on('message', async (data) => {
+        try {
+            //const decryptedMessage = await decryptMessage(privateKey, data.message);
+            //console.log(`Message from ${data.sender_sid}:`, decryptedMessage);
+            isCurrentUser = false;
+            console.log("Sender------------",data["sender"])
+            console.log("Sender------------",data["message"])
+            let ul = document.getElementById("chat-msg");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(data["sender"] + " : " + data["message"]));
+            li.classList.add("left-align");
+            ul.appendChild(li);
+            ul.scrolltop = ul.scrollHeight;
+        } catch(error) {
+            console.error("Error message error:", error);
+        }
+        
+    });
+    
+    socket.on("allUsers", function (data) {
+        clientKeys = data["allUserKeys"];
+        console.log(userData.Username);
+        delete clientKeys[userData.Username];
+        loadFriends();
+    })
+
+    socket.on('logout_redirect', function() {
+        logout()
+    });
+
+    document.getElementById('send').onclick = () => {
+        sendMessage();
+    };
+    
+    document.getElementById('logout-btn').onclick = () => {
+        socket.emit('logout', { user_name:  username});
+    };
 });
 
 async function initiateUser() {
     try {
         // Connect the socket
+        username = userData.Username;
         socket.connect();
 
         // Generate RSA key pair and get the public key
@@ -43,33 +67,21 @@ async function initiateUser() {
         socket.on("connect", function () {
             socket.emit('user_join', { recipient: userData.Username, publicKey: "abc_need to replace" });
         });
+        
+        
     } catch (error) {
         console.error("Error initiating user:", error);
     }
 }
 
-socket.on('message', async (data) => {
-    //const decryptedMessage = await decryptMessage(privateKey, data.message);
-    //console.log(`Message from ${data.sender_sid}:`, decryptedMessage);
-    isCurrentUser = false;
-    let ul = document.getElementById("chat-msg");
-    let li = document.createElement("li");
-    li.appendChild(document.createTextNode(data["sender"] + " : " + data["message"]));
-    li.classList.add("left-align");
-    ul.appendChild(li);
-    ul.scrolltop = ul.scrollHeight;
-});
 
-socket.on("allUsers", function (data) {
-    clientKeys = data["allUserKeys"];
-    console.log(username);
-    delete clientKeys[username];
-    loadFriends();
-})
 
 function loadFriends() {
     const friendsList = document.getElementById("friends-list");
     friendsList.innerHTML = "";
+
+    let highlightedLi = null;
+
     for (const [user, key] of Object.entries(clientKeys)) {
         let li = document.createElement("li");
         li.innerHTML = `
@@ -77,31 +89,17 @@ function loadFriends() {
             <div class="username">${user}</div>
             <div class="last-active" id="last-active-${user}"></div>
         `;
+
         li.addEventListener("click", () => {
             chatClient = user;
-            // Clear chat messages
-            const chatMessages = document.getElementById("chat-msg");
-            chatMessages.innerHTML = "";
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Display user selected for chat
-            let chatStatusMessage = document.createElement("li");
-            chatStatusMessage.classList.add("left-align");
-            chatStatusMessage.innerText = `${user} is available to chat`;
-            chatMessages.appendChild(chatStatusMessage);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         });
+
         friendsList.appendChild(li);
     }
 }
 
-document.getElementById('send').onclick = () => {
-    sendMessage();
-};
 
-document.getElementById('logout-btn').onclick = () => {
-    logout();
-};
+
 
 function sendMessage() {
     const clientMessage = document.getElementById('message-input').value;

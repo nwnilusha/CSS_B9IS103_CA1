@@ -72,13 +72,18 @@ def create_app():
     # Application's main page
     @app.route("/index")
     def index():
-        if session['username']:
+        if 'loggedin' in session:
             userData = {
                     'Username': session.get('username')
                 }
-            return render_template('index.html', userData=userData)
+        elif 'profile' in session:
+            userData = {
+                    'Username': session.get('email')
+                }
         else:
             return redirect(url_for('login'))
+        
+        return render_template('index.html', userData=userData)
         
 
     @app.route('/', methods=['GET', 'POST'])
@@ -220,14 +225,19 @@ def create_app():
         clients[data['recipient']] = request.sid
         broadcastKeys[data['recipient']] = data['publicKey']
         allClients[request.sid] = data['recipient']
+        # session['recipient'] = data['recipient']
+        # session['sessionId'] = request.sid
         emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
         print(data['publicKey'])
 
     @socketio.on('message')
     def handle_message(data):
         recipient = data['recipient_name']
+        print("Recepient name: -------"+recipient)
+        print("Recepient message: -------"+data['message'])
         if recipient in clients:
             recipient_sid = clients[recipient]
+            print("Client: -------"+recipient_sid)
             emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
         else:
             print('Recipient not connected.')
@@ -240,6 +250,22 @@ def create_app():
             if user == request.sid:
                 username = clients[request.sid]
         emit("chat", {"message": message, "username": username}, broadcast=True)
+
+    @socketio.on('logout')
+    def handle_logout(data):
+        print(f"Logout Data : {data}")
+        if request.sid in allClients:
+            user = allClients[request.sid]
+            print(f"logout user data : {user}")
+            del clients[user]
+            del broadcastKeys[user]
+            del allClients[request.sid]
+            emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+
+            print("User logging out !!!!")
+            emit('logout_redirect')
+        else:
+            print(f"Session ID {request.sid} not found in allClients dictionary")
 
     @app.route('/logout')
     def logout():
