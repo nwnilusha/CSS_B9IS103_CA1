@@ -155,6 +155,12 @@ def create_app():
             confirm_password = request.form['confirm_password']
             msg = None
 
+            # Validate email format
+            email_pattern = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w{2,4}$')
+            if not email_pattern.match(email):
+                msg = 'Invalid email format.'
+                return render_template('signup.html', msg=msg)
+
             # Validate password complexity
             password_pattern = re.compile(r'^(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$')
             if not password_pattern.match(password):

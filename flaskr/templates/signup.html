@@ -29,7 +29,7 @@
             <h2>Sign Up</h2>
             <form id="signup-form" class="signup-form" action="{{ url_for('signup') }}" method="post">
                 <label class="form-label">Username</label>
-                <input class="form-input" type="text" name="username" id="username" required>
+                <input class="form-input" type="text" name="username" id="username" required pattern="[A-Za-z0-9]{3,}">
                 <label class="form-label">Email</label>
                 <input class="form-input" type="email" name="email" id="email" required>
                 <label class="form-label">Password</label>
