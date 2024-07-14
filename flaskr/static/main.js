@@ -1,7 +1,7 @@
 const socket = io({ autoConnect: false });
 let privateKey, publicKey;
 var clientKeys = {};
-var username, chatClient;
+var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -45,8 +45,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         logout()
     });
 
+    socket.on('error',function(errorData){
+        console.log("Logout Error ------- ",errorData.message)
+    });
+
     document.getElementById('send').onclick = () => {
-        sendMessage();
+        await sendMessage();
     };
     
     document.getElementById('logout-btn').onclick = () => {
@@ -58,14 +62,13 @@ async function initiateUser() {
     try {
         // Connect the socket
         username = userData.Username;
-        socket.connect();
+        const clientPublicKey = await generateRSAKeyPair();
 
-        // Generate RSA key pair and get the public key
-        //const clientPublicKey = await generateRSAKeyPair();
+        socket.connect();
 
         // Handle socket connection event
         socket.on("connect", function () {
-            socket.emit('user_join', { recipient: userData.Username, publicKey: "abc_need to replace" });
+            socket.emit('user_join', { recipient: userData.Username, publicKey: clientPublicKey });
         });
         
         
@@ -92,6 +95,7 @@ function loadFriends() {
 
         li.addEventListener("click", () => {
             chatClient = user;
+            chatClientPK = key
         });
 
         friendsList.appendChild(li);
@@ -99,13 +103,12 @@ function loadFriends() {
 }
 
 
-
-
-function sendMessage() {
+async function sendMessage() {
     const clientMessage = document.getElementById('message-input').value;
+    const encryptedMessage = await clientMessage(chatClientPK,clientMessage)
     if (chatClient && clientMessage.trim() !== "") {
         document.getElementById("message-input").value = "";
-        socket.emit('message', { recipient_name: chatClient, message: clientMessage });
+        socket.emit('message', { recipient_name: chatClient, message: encryptedMessage });
 
         isCurrentUser = true;
         let ul = document.getElementById("chat-msg");
@@ -121,21 +124,6 @@ function sendMessage() {
     }
 }
 
-function logout() {
-    fetch('/logout', {
-        method: 'GET',
-        credentials: 'same-origin'
-    }).then(response => {
-        if (response.ok) {
-            window.location.href = '/';
-        } else {
-            console.error("Logout failed");
-        }
-    }).catch(error => {
-        console.error("Logout error:", error);
-    });
-}
-
 async function generateRSAKeyPair() {
     const keyPair = await window.crypto.subtle.generateKey(
         {
@@ -149,6 +137,8 @@ async function generateRSAKeyPair() {
     );
     publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
     privateKey = keyPair.privateKey;
+    console.log("Private Key-----------",privateKey)
+    console.log("Public Key-----------",publicKey)
     return publicKey;
 }
 
@@ -204,4 +194,19 @@ function arrayBufferToBase64(buffer) {
         binary += String.fromCharCode(bytes[i]);
     }
     return window.btoa(binary);
+}
+
+function logout() {
+    fetch('/logout', {
+        method: 'GET',
+        credentials: 'same-origin'
+    }).then(response => {
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            console.error("Logout failed");
+        }
+    }).catch(error => {
+        console.error("Logout error:", error);
+    });
 }

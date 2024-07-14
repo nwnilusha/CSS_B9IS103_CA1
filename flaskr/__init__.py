@@ -219,28 +219,57 @@ def create_app():
     def handle_connect():
         print('Client Connected')
 
+    @socketio.on('connect')
+    def handle_connect():
+        print('Client Connected')
+
     @socketio.on('user_join')
     def handle_user_join(data):
-        print(f"User {data['recipient']} Joined!")
-        clients[data['recipient']] = request.sid
-        broadcastKeys[data['recipient']] = data['publicKey']
-        allClients[request.sid] = data['recipient']
-        # session['recipient'] = data['recipient']
-        # session['sessionId'] = request.sid
-        emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
-        print(data['publicKey'])
+        try:
+            print(f"Recepient Name-------> {data['recipient']}")
+            print(f"Recepient Public Key-------> {data['publicKey']}")
+            # if 'recipient' not in data or 'publicKey' not in data:
+            #     raise ValueError("Missing 'recipient' or 'publicKey' in data")
+
+            recipient = data['recipient']
+            public_key = data['publicKey']
+
+            print(f"User {recipient} Joined!")
+
+            clients[recipient] = request.sid
+            broadcastKeys[recipient] = public_key
+            allClients[request.sid] = recipient
+
+            emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+        
+        except ValueError as ve:
+            print(f"ValueError: {ve}")
+            emit('error', {'message': str(ve)})
+        
+        except KeyError as ke:
+            print(f"KeyError: {ke}")
+            emit('error', {'message': 'An internal error occurred. Please try again later.'})
+        
+        except Exception as ex:
+            print(f"Unexpected error: {ex}")
+            emit('error', {'message': 'An unexpected error occurred. Please try again later.'})
+
+
 
     @socketio.on('message')
     def handle_message(data):
-        recipient = data['recipient_name']
-        print("Recepient name: -------"+recipient)
-        print("Recepient message: -------"+data['message'])
-        if recipient in clients:
-            recipient_sid = clients[recipient]
-            print("Client: -------"+recipient_sid)
-            emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
-        else:
-            print('Recipient not connected.')
+        try:
+            recipient = data['recipient_name']
+            print("Recepient name: -------"+recipient)
+            print("Recepient message: -------"+data['message'])
+            if recipient in clients:
+                recipient_sid = clients[recipient]
+                print("Client: -------"+recipient_sid)
+                emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
+            else:
+                print('Recipient not connected.')
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
 
     @socketio.on('new_message')
     def handle_new_message(message):
@@ -253,19 +282,24 @@ def create_app():
 
     @socketio.on('logout')
     def handle_logout(data):
-        print(f"Logout Data : {data}")
-        if request.sid in allClients:
-            user = allClients[request.sid]
-            print(f"logout user data : {user}")
-            del clients[user]
-            del broadcastKeys[user]
-            del allClients[request.sid]
-            emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+        try:
+            print(f"Logout Data : {data}")
+            if request.sid in allClients:
+                user = allClients[request.sid]
+                print(f"logout user data : {user}")
+                del clients[user]
+                del broadcastKeys[user]
+                del allClients[request.sid]
+                emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
 
-            print("User logging out !!!!")
-            emit('logout_redirect')
-        else:
-            print(f"Session ID {request.sid} not found in allClients dictionary")
+                print("User logging out !!!!")
+                emit('logout_redirect', room=request.sid)
+            else:
+                print(f"Session ID {request.sid} not found in allClients dictionary")
+        except KeyError as ke:
+            print(f"KeyError: {ke}")
+            emit('error', {'message': 'An internal error occurred. Please try again later.'}, room=request.sid)
+
 
     @app.route('/logout')
     def logout():
