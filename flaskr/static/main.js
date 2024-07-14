@@ -21,10 +21,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             //console.log(`Message from ${data.sender_sid}:`, decryptedMessage);
             isCurrentUser = false;
             console.log("Sender------------",data["sender"])
-            console.log("Sender------------",data["message"])
+            console.log("Sender Encrypted Message------------",data["message"])
+            const decryptMessage = await decryptMessage(privateKey,data["message"])
+            console.log("Sender Decrypted Message------------",decryptMessage)
             let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
-            li.appendChild(document.createTextNode(data["sender"] + " : " + data["message"]));
+            li.appendChild(document.createTextNode(data["sender"] + " : " + decryptMessage));
             li.classList.add("left-align");
             ul.appendChild(li);
             ul.scrolltop = ul.scrollHeight;
@@ -50,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('send').onclick = () => {
-        await sendMessage();
+        sendMessage();
     };
     
     document.getElementById('logout-btn').onclick = () => {
