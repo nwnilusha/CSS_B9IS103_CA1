@@ -61,13 +61,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initiateUser() {
     try {
-        // Connect the socket
         username = userData.Username;
         const clientPublicKey = await generateRSAKeyPair();
 
         socket.connect();
 
-        // Handle socket connection event
         socket.on("connect", function () {
             socket.emit('user_join', { recipient: userData.Username, publicKey: clientPublicKey });
         });
@@ -127,24 +125,6 @@ async function sendMessage() {
     }
 }
 
-// async function generateRSAKeyPair() {
-//     const keyPair = await window.crypto.subtle.generateKey(
-//         {
-//             name: "RSA-OAEP",
-//             modulusLength: 2048,
-//             publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-//             hash: "SHA-256"
-//         },
-//         true,
-//         ["encrypt", "decrypt"]
-//     );
-//     publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-//     privateKey = keyPair.privateKey;
-//     console.log("Private Key-----------",privateKey)
-//     console.log("Public Key-----------",publicKey)
-//     return publicKey;
-// }
-
 async function generateRSAKeyPair() {
     const keyPair = await window.crypto.subtle.generateKey(
         {
@@ -165,9 +145,6 @@ async function generateRSAKeyPair() {
 
     return publicKeyBase64;
 }
-
-
-
 
 
 async function encryptMessage(publicKeyBase64, message) {
@@ -207,7 +184,6 @@ async function encryptMessage(publicKeyBase64, message) {
 }
 
 
-// Decrypt the received encrypted message
 async function decryptMessage(privateKey, encryptedMessage) {
     try {
         const decryptedMessage = await window.crypto.subtle.decrypt(
