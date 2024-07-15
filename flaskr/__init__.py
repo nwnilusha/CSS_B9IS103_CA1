@@ -100,34 +100,21 @@ def create_app():
 
                 if db is not None :
                     result = db.fetch_query(select_query, (username,))
-                    print(f"TEST----> {result[0]}")                    
-
                     if result:
-                        for result_ob in result:
-                            # remove the debug lines later
-                            print(f"test----> {result_ob['password']}")
-                            print(f"TEST pwd----> {password}")
-                            print(f"TEST pwd----> {generate_password_hash(password)}")
-                            if check_password_hash(result_ob['password'], password):
-                                session['loggedin'] = True
-                                session['username'] = username
-                                return redirect(url_for('index'))
-                            else:
-                                msg="Login failure"
+                        user_data = result[0]
+                        if check_password_hash(user_data['password'], password):
+                            session['loggedin'] = True
+                            session['username'] = user_data['email']
+                            return redirect(url_for('index'))
+                        else:
+                            msg = "Incorrect Username or Password"
                     else:
                         msg = 'Incorrect Username or Password'
-                        return render_template('login.html', msg=msg)                    
                 else:
-                    print("DB connection is not created. Please check the connection string.")
                     msg = "Database connectivity Error, Check the connection string"
 
             except Exception as ex:
-                print(f"Exception occurred: {ex}")
                 msg = f"Exception occurred: {ex}"
-                db = None           
-        else:
-            return render_template('login.html', msg=msg)
-        
         return render_template('login.html', msg=msg)
 
     @app.route('/google/login')
@@ -163,9 +150,16 @@ def create_app():
     def signup():
         if request.method == 'POST':
             username = request.form['username']
+            email = request.form['email']
             password = request.form['password']
             confirm_password = request.form['confirm_password']
             msg = None
+
+            # Validate email format
+            email_pattern = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w{2,4}$')
+            if not email_pattern.match(email):
+                msg = 'Invalid email format.'
+                return render_template('signup.html', msg=msg)
 
             # Validate password complexity
             password_pattern = re.compile(r'^(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$')
@@ -175,33 +169,32 @@ def create_app():
 
             # Validate password and confirm_password match
             if password != confirm_password:
-                flash('Passwords do not match.')
+                msg = 'Passwords do not match.'
                 return render_template('signup.html', msg=msg)
 
             # Hash the password before saving to database
             hashed_password = generate_password_hash(password)
 
             # Check if username already exists in database
-            select_query = "SELECT * FROM USER WHERE username = %s"
+            select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
             db = None
             try:
                 db = g.get('db')
 
                 if db is not None :
-                    result = db.fetch_query(select_query, (username,))
+                    result = db.fetch_query(select_query, (username, email))
 
                     if result:
-                        msg = 'Username already exists. Please choose a different username.'
+                        msg = 'Username or Email already exists. Please choose a different username or email.'
                     else:
-                        insert_query = 'INSERT INTO USER (username, password) VALUES (%s, %s)'
-                        result = db.execute_vquery(insert_query, username, hashed_password)
-                        print(f"result : {result}");
+                        insert_query = 'INSERT INTO USER (username, email, password) VALUES (%s, %s, %s)'
+                        result = db.execute_vquery(insert_query, username, email, hashed_password)
+                        print(f"result : {result}")
                         if result >= 0:
                             return redirect(url_for('login'))
                         else:
                             msg = 'User registration failure: DB error'
 
-                        return render_template('login.html', msg=msg)
                 else:
                     print("DB connection is not created. Please check the connection string.")
                     msg = "Database connectivity Error, Check the connection string"
@@ -212,7 +205,7 @@ def create_app():
                 db = None
 
             if msg:
-                return render_template('login.html', msg=msg)
+                return render_template('signup.html', msg=msg)
         return render_template('signup.html')
 
     @socketio.on('connect')
