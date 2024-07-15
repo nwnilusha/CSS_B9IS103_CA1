@@ -1,145 +1,164 @@
 const socket = io({ autoConnect: false });
 let privateKey, publicKey;
 var clientKeys = {};
-var username, chatClient;
+var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
 document.addEventListener('DOMContentLoaded', async () => {
     //publicKey = await generateRSAKeyPair()   
     publicKey = "abc"
+    document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
-    document.getElementById("join-btn").addEventListener("click", async function () {
-        username = document.getElementById("username").value;
-
-        socket.connect();
-        // const clientPublicKey = await generateRSAKeyPair()
-        const clientPublicKey = publicKey;
-
-        socket.on("connect", function () {
-            socket.emit('user_join', { recipient: username, publicKey: publicKey });
-
-        })
-
-        document.getElementById("chat").style.display = "block";
-        document.getElementById("landing").style.display = "none";
-    })
-
-    document.getElementById("message-input").addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-            sendMessage();
-        }
-    });
+   
 
     socket.on('message', async (data) => {
-        //const decryptedMessage = await decryptMessage(privateKey, data.message);
-        //console.log(`Message from ${data.sender_sid}:`, decryptedMessage);
-        isCurrentUser = false;
-        let ul = document.getElementById("chat-msg");
-        let li = document.createElement("li");
-        li.appendChild(document.createTextNode(data["sender"] + " : " + data["message"]));
-        li.classList.add("left-align");
-        ul.appendChild(li);
-        ul.scrolltop = ul.scrollHeight;
+        try {
+            //const decryptedMessage = await decryptMessage(privateKey, data.message);
+            //console.log(`Message from ${data.sender_sid}:`, decryptedMessage);
+            isCurrentUser = false;
+            console.log("Sender------------",data["sender"])
+            console.log("Sender Encrypted Message------------",data["message"])
+            const decryptMessage = await decryptMessage(privateKey,data["message"])
+            console.log("Sender Decrypted Message------------",decryptMessage)
+            let ul = document.getElementById("chat-msg");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(data["sender"] + " : " + decryptMessage));
+            li.classList.add("left-align");
+            ul.appendChild(li);
+            ul.scrolltop = ul.scrollHeight;
+        } catch(error) {
+            console.error("Error message error:", error);
+        }
+        
     });
-
+    
     socket.on("allUsers", function (data) {
         clientKeys = data["allUserKeys"];
-        console.log(username);
-        delete clientKeys[username];
+        console.log(userData.Username);
+        delete clientKeys[userData.Username];
         loadFriends();
     })
 
-    function loadFriends() {
-        const friendsList = document.getElementById("friends-list");
-        friendsList.innerHTML = "";
-        for (const [user, key] of Object.entries(clientKeys)) {
-            let li = document.createElement("li");
-            li.innerHTML = `
-                <div class="status-indicator"></div>
-                <div class="username">${user}</div>
-                <div class="last-active" id="last-active-${user}"></div>
-            `;
-            li.addEventListener("click", () => {
-                chatClient = user;
-                // Clear chat messages
-                const chatMessages = document.getElementById("chat-msg");
-                chatMessages.innerHTML = "";
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+    socket.on('logout_redirect', function() {
+        logout()
+    });
 
-                // Display user selected for chat
-                let chatStatusMessage = document.createElement("li");
-                chatStatusMessage.classList.add("left-align");
-                chatStatusMessage.innerText = `${user} is available to chat`;
-                chatMessages.appendChild(chatStatusMessage);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
-            friendsList.appendChild(li);
-        }
-    }
+    socket.on('error',function(errorData){
+        console.log("Logout Error ------- ",errorData.message)
+    });
 
-    document.getElementById('send').onclick = () => {
-        sendMessage();
+    document.getElementById('send').onclick = async () => {
+        await sendMessage();
     };
 
+    document.getElementById("message-input").addEventListener("keypress", async function (event) {
+        if (event.key === "Enter") {
+            await sendMessage();
+        }
+    });
+    
     document.getElementById('logout-btn').onclick = () => {
-        logout();
+        socket.emit('logout', { user_name:  username});
     };
+});
 
-    function sendMessage() {
-        const clientMessage = document.getElementById('message-input').value;
-        if (chatClient && clientMessage.trim() !== "") {
-            document.getElementById("message-input").value = "";
-            socket.emit('message', { recipient_name: chatClient, message: clientMessage });
+async function initiateUser() {
+    try {
+        // Connect the socket
+        username = userData.Username;
+        const clientPublicKey = await generateRSAKeyPair();
 
-            isCurrentUser = true;
-            let ul = document.getElementById("chat-msg");
-            let li = document.createElement("li");
-            li.appendChild(document.createTextNode("Me : " + clientMessage));
-            li.classList.add("right-align");
-            ul.appendChild(li);
-            ul.scrollTop = ul.scrollHeight;
-        } else if (clientMessage.trim() === "") {
-            console.error('Empty message cannot be sent');
-        } else {
-            console.error('No chat client selected');
-        }
-    }
+        socket.connect();
 
-    function logout() {
-        fetch('/logout', {
-            method: 'GET',
-            credentials: 'same-origin'
-        }).then(response => {
-            if (response.ok) {
-                window.location.href = '/';
-            } else {
-                console.error("Logout failed");
-            }
-        }).catch(error => {
-            console.error("Logout error:", error);
+        // Handle socket connection event
+        socket.on("connect", function () {
+            socket.emit('user_join', { recipient: userData.Username, publicKey: clientPublicKey });
         });
+        
+        
+    } catch (error) {
+        console.error("Error initiating user:", error);
     }
+}
 
-    async function generateRSAKeyPair() {
-        const keyPair = await window.crypto.subtle.generateKey(
-            {
-                name: "RSA-OAEP",
-                modulusLength: 2048,
-                publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-                hash: "SHA-256"
-            },
-            true,
-            ["encrypt", "decrypt"]
-        );
-        publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-        privateKey = keyPair.privateKey;
-        return publicKey;
+
+
+function loadFriends() {
+    const friendsList = document.getElementById("friends-list");
+    friendsList.innerHTML = "";
+
+    let highlightedLi = null;
+
+    for (const [user, key] of Object.entries(clientKeys)) {
+        let li = document.createElement("li");
+        li.innerHTML = `
+            <div class="status-indicator"></div>
+            <div class="username">${user}</div>
+            <div class="last-active" id="last-active-${user}"></div>
+        `;
+
+        li.addEventListener("click", () => {
+            chatClient = user;
+            chatClientPK = key
+        });
+
+        friendsList.appendChild(li);
     }
+}
 
-    async function encryptMessage(publicKey, message) {
+
+async function sendMessage() {
+    const clientMessage = document.getElementById('message-input').value;
+    console.log("Message before encrypt-----------",clientMessage)
+    const encryptedMessage = await encryptMessage(chatClientPK,clientMessage)
+    console.log("Message after encrypt-----------",encryptedMessage)
+    if (chatClient && clientMessage.trim() !== "") {
+        document.getElementById("message-input").value = "";
+        socket.emit('message', { recipient_name: chatClient, message: encryptedMessage });
+
+        isCurrentUser = true;
+        let ul = document.getElementById("chat-msg");
+        let li = document.createElement("li");
+        li.appendChild(document.createTextNode("Me : " + clientMessage));
+        li.classList.add("right-align");
+        ul.appendChild(li);
+        ul.scrollTop = ul.scrollHeight;
+    } else if (clientMessage.trim() === "") {
+        console.error('Empty message cannot be sent');
+    } else {
+        console.error('No chat client selected');
+    }
+}
+
+async function generateRSAKeyPair() {
+    const keyPair = await window.crypto.subtle.generateKey(
+        {
+            name: "RSA-OAEP",
+            modulusLength: 2048,
+            publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+            hash: "SHA-256"
+        },
+        true,
+        ["encrypt", "decrypt"]
+    );
+    publicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+    privateKey = keyPair.privateKey;
+    console.log("Private Key-----------",privateKey)
+    console.log("Public Key-----------",publicKey)
+    return publicKey;
+}
+
+// Encrypting the client message
+async function encryptMessage(publicKey, message) {
+    try {
+        const keyBuffer = base64ToArrayBuffer(publicKey);
+        if (!keyBuffer) {
+            throw new Error("Invalid public key format.");
+        }
+
         const importedPublicKey = await window.crypto.subtle.importKey(
             "spki",
-            base64ToArrayBuffer(publicKey),
+            keyBuffer,
             {
                 name: "RSA-OAEP",
                 hash: "SHA-256"
@@ -147,6 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             true,
             ["encrypt"]
         );
+
         const encryptedMessage = await window.crypto.subtle.encrypt(
             {
                 name: "RSA-OAEP"
@@ -154,21 +174,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             importedPublicKey,
             new TextEncoder().encode(message)
         );
+        console.log("Encrypted Message-----------> ", encryptedMessage);
         return arrayBufferToBase64(encryptedMessage);
+    } catch (error) {
+        console.error("Error during encryption:", error.message);
+        throw error;
     }
+}
 
-    async function decryptMessage(privateKey, encryptedMessage) {
+// Decrypt the received encrypted message
+async function decryptMessage(privateKey, encryptedMessage) {
+    try {
+        const messageBuffer = base64ToArrayBuffer(encryptedMessage);
+        if (!messageBuffer) {
+            throw new Error("Invalid encrypted message format.");
+        }
+
         const decryptedMessage = await window.crypto.subtle.decrypt(
             {
                 name: "RSA-OAEP"
             },
             privateKey,
-            base64ToArrayBuffer(encryptedMessage)
+            messageBuffer
         );
         return new TextDecoder().decode(decryptedMessage);
+    } catch (error) {
+        console.error("Error during decryption:", error.message);
+        throw error;
     }
+}
 
-    function base64ToArrayBuffer(base64) {
+function base64ToArrayBuffer(base64) {
+    try {
+        // Add padding if necessary
+        const padLength = (4 - (base64.length % 4)) % 4;
+        if (padLength > 0) {
+            base64 += '='.repeat(padLength);
+        }
+
+        // Validate if the base64 string contains only valid Base64 characters
+        const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Pattern.test(base64)) {
+            throw new Error("Invalid characters in Base64 string.");
+        }
+
         const binaryString = window.atob(base64);
         const len = binaryString.length;
         const bytes = new Uint8Array(len);
@@ -176,15 +225,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             bytes[i] = binaryString.charCodeAt(i);
         }
         return bytes.buffer;
+    } catch (error) {
+        console.error("Failed to convert Base64 to ArrayBuffer:", error.message);
+        return null;
     }
+}
 
-    function arrayBufferToBase64(buffer) {
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return window.btoa(binary);
+
+// Convert ArrayBuffer to Base64 string
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
     }
-});
+    return window.btoa(binary);
+}
+
+
+
+function logout() {
+    fetch('/logout', {
+        method: 'GET',
+        credentials: 'same-origin'
+    }).then(response => {
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            console.error("Logout failed");
+        }
+    }).catch(error => {
+        console.error("Logout error:", error);
+    });
+}
