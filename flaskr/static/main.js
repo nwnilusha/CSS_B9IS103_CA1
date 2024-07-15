@@ -9,11 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     publicKey = "abc"
     document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
-    document.getElementById("message-input").addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-            sendMessage();
-        }
-    });
+   
 
     socket.on('message', async (data) => {
         try {
@@ -51,9 +47,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("Logout Error ------- ",errorData.message)
     });
 
-    document.getElementById('send').onclick = () => {
-        sendMessage();
+    document.getElementById('send').onclick = async () => {
+        await sendMessage();
     };
+
+    document.getElementById("message-input").addEventListener("keypress", async function (event) {
+        if (event.key === "Enter") {
+            await sendMessage();
+        }
+    });
     
     document.getElementById('logout-btn').onclick = () => {
         socket.emit('logout', { user_name:  username});
@@ -107,7 +109,9 @@ function loadFriends() {
 
 async function sendMessage() {
     const clientMessage = document.getElementById('message-input').value;
-    const encryptedMessage = await clientMessage(chatClientPK,clientMessage)
+    console.log("Message before encrypt-----------",clientMessage)
+    const encryptedMessage = await encryptMessage(chatClientPK,clientMessage)
+    console.log("Message after encrypt-----------",encryptedMessage)
     if (chatClient && clientMessage.trim() !== "") {
         document.getElementById("message-input").value = "";
         socket.emit('message', { recipient_name: chatClient, message: encryptedMessage });
@@ -146,48 +150,89 @@ async function generateRSAKeyPair() {
 
 // Encrypting the client message
 async function encryptMessage(publicKey, message) {
-    const importedPublicKey = await window.crypto.subtle.importKey(
-        "spki",
-        base64ToArrayBuffer(publicKey),
-        {
-            name: "RSA-OAEP",
-            hash: "SHA-256"
-        },
-        true,
-        ["encrypt"]
-    );
-    const encryptedMessage = await window.crypto.subtle.encrypt(
-        {
-            name: "RSA-OAEP"
-        },
-        importedPublicKey,
-        new TextEncoder().encode(message)
-    );
-    return arrayBufferToBase64(encryptedMessage);
+    try {
+        const keyBuffer = base64ToArrayBuffer(publicKey);
+        if (!keyBuffer) {
+            throw new Error("Invalid public key format.");
+        }
+
+        const importedPublicKey = await window.crypto.subtle.importKey(
+            "spki",
+            keyBuffer,
+            {
+                name: "RSA-OAEP",
+                hash: "SHA-256"
+            },
+            true,
+            ["encrypt"]
+        );
+
+        const encryptedMessage = await window.crypto.subtle.encrypt(
+            {
+                name: "RSA-OAEP"
+            },
+            importedPublicKey,
+            new TextEncoder().encode(message)
+        );
+        console.log("Encrypted Message-----------> ", encryptedMessage);
+        return arrayBufferToBase64(encryptedMessage);
+    } catch (error) {
+        console.error("Error during encryption:", error.message);
+        throw error;
+    }
 }
 
 // Decrypt the received encrypted message
 async function decryptMessage(privateKey, encryptedMessage) {
-    const decryptedMessage = await window.crypto.subtle.decrypt(
-        {
-            name: "RSA-OAEP"
-        },
-        privateKey,
-        base64ToArrayBuffer(encryptedMessage)
-    );
-    return new TextDecoder().decode(decryptedMessage);
+    try {
+        const messageBuffer = base64ToArrayBuffer(encryptedMessage);
+        if (!messageBuffer) {
+            throw new Error("Invalid encrypted message format.");
+        }
+
+        const decryptedMessage = await window.crypto.subtle.decrypt(
+            {
+                name: "RSA-OAEP"
+            },
+            privateKey,
+            messageBuffer
+        );
+        return new TextDecoder().decode(decryptedMessage);
+    } catch (error) {
+        console.error("Error during decryption:", error.message);
+        throw error;
+    }
 }
 
 function base64ToArrayBuffer(base64) {
-    const binaryString = window.atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+    try {
+        // Add padding if necessary
+        const padLength = (4 - (base64.length % 4)) % 4;
+        if (padLength > 0) {
+            base64 += '='.repeat(padLength);
+        }
+
+        // Validate if the base64 string contains only valid Base64 characters
+        const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Pattern.test(base64)) {
+            throw new Error("Invalid characters in Base64 string.");
+        }
+
+        const binaryString = window.atob(base64);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes.buffer;
+    } catch (error) {
+        console.error("Failed to convert Base64 to ArrayBuffer:", error.message);
+        return null;
     }
-    return bytes.buffer;
 }
 
+
+// Convert ArrayBuffer to Base64 string
 function arrayBufferToBase64(buffer) {
     let binary = '';
     const bytes = new Uint8Array(buffer);
@@ -197,6 +242,8 @@ function arrayBufferToBase64(buffer) {
     }
     return window.btoa(binary);
 }
+
+
 
 function logout() {
     fetch('/logout', {
