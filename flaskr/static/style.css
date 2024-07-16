@@ -1,0 +1,221 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #72EDF2 10%, #5151E5 100%);
+    margin: 0;
+}
+
+.centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+.landing-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.landing-container input {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    font-size: 18px;
+}
+
+.landing-container button {
+    padding: 15px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    width: 100%;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+}
+
+.landing-container button:hover {
+    background-color: #0056b3;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    width: 900px;
+    height: 700px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #007bff 10%, #0056b3 100%);
+    color: #fff;
+    border-radius: 10px 10px 0 0;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.chat-header button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #ff4d4d;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.chat-header button:hover {
+    background-color: #ff1a1a;
+}
+
+.chat-content {
+    display: flex;
+    flex: 1;
+}
+
+.friends-list-container {
+    width: 270px; 
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-right: 1px solid #ccc;
+    overflow-y: auto;
+}
+
+.friends-list-container h3 {
+    margin: 0 0 10px 0;
+    font-size: 22px;
+    color: #333;
+}
+
+.friends-list-container ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.friends-list-container ul li {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    background-color: #e9ecef;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    white-space: normal;
+    word-wrap: break-word;
+    max-width: 100%;
+}
+
+.friends-list-container ul li:hover {
+    background-color: #d1e7dd;
+}
+
+.friends-list-container .status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #28a745;
+    margin-right: 10px;
+}
+
+.friends-list-container .username {
+    font-size: 16px;
+    color: #333;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    border-bottom: 1px solid #ccc;
+    font-size: 18px;
+}
+
+.chat-input {
+    display: flex;
+    padding: 20px;
+    border-top: 1px solid #ccc;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.chat-input button {
+    padding: 15px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+}
+
+.chat-input button:hover {
+    background-color: #0056b3;
+}
+
+#chat-msg {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#chat-msg li {
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 5px;
+    max-width: 75%;
+    word-wrap: break-word;
+    font-size: 18px;
+}
+
+#chat-msg li.left-align {
+    text-align: left;
+    background-color: #f1f1f1;
+}
+
+#chat-msg li.right-align {
+    text-align: right;
+    background-color: #d1e7dd;
+    margin-left: auto;
+}
+
+.highlighted {
+    background-color: green;
+    color: white; /* Optional: to make the text color more readable */
+}
+
+.center_user {
+    color: green;
+    font-weight: bold;
+    text-align: center;
+}

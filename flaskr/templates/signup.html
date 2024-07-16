@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Buzz - Signup</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-login.css') }}">
+    <style>
+        .back-arrow {
+            display: inline-block;
+            margin-bottom: 20px;
+            cursor: pointer;
+            color: #000; 
+            text-decoration: none;
+            font-size: 24px; 
+        }
+        .back-arrow:hover {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Go Buzz</h1>
+    </header>
+    <div class="container">
+        <div class="card">
+            <a href="{{ url_for('login') }}" class="back-arrow">&#8592;</a> 
+            <h2>Sign Up</h2>
+            <form id="signup-form" class="signup-form" action="{{ url_for('signup') }}" method="post">
+                <label class="form-label">Username</label>
+                <input class="form-input" type="text" name="username" id="username" required pattern="[A-Za-z0-9]{3,}">
+                <label class="form-label">Email</label>
+                <input class="form-input" type="email" name="email" id="email" required>
+                <label class="form-label">Password</label>
+                <input class="form-input" type="password" name="password" id="password" required>
+                <label class="form-label">Confirm Password</label>
+                <input class="form-input" type="password" name="confirm_password" id="confirm_password" required>
+                <input class="form-submit btn" type="submit" value="Sign Up">
+                {% if msg %}
+                <p style="color: red;">{{ msg }}</p>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"
+        integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA=="
+        crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <title>Chat Website</title>
+</head>
+
+<body onload=initiateUser()>
+    <div id="chat">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h3 id="chat_header_text">Chat Website</h3>
+                <button id="logout-btn">Logout</button>
+            </div>
+            <div class="chat-content">
+                <div class="friends-list-container">
+                    <h3>Friends</h3>
+                    <ul id="friends-list">
+                    </ul>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <ul id="chat-msg">
+                    </ul>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
+                <button id="send">Send</button>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript">
+    var userData = {{ userData | tojson }};
+    console.log(userData.Username)
+
+</script>
+
+</html>
