@@ -71,6 +71,8 @@ async function initiateUser() {
         });
         
         
+        document.getElementById("chat_header_text").textContent = `Chat Website [${userData.Username}]`;
+        
     } catch (error) {
         console.error("Error initiating user:", error);
     }
@@ -95,6 +97,14 @@ function loadFriends() {
         li.addEventListener("click", () => {
             chatClient = user;
             chatClientPK = key
+
+            let ul = document.getElementById("chat-msg");
+            ul.innerHTML = "";
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+            li.classList.add("center_user");
+            ul.appendChild(li);
+            ul.scrollTop = ul.scrollHeight;
         });
 
         friendsList.appendChild(li);
