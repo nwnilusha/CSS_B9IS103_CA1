@@ -1,8 +1,34 @@
 const socket = io({ autoConnect: false });
 let privateKey, publicKey;
-var clientKeys = {};
+var clientKeys = {}; /** {'username', 'publicKey'} */
 var username, chatClient;
 var isCurrentUser = true;
+
+/**
+ * Function to load the email request
+ */
+
+function loadRequest() {
+    const formContent = `
+        <div class="email-form-container">
+            <p>Send Connection Request</p>
+            <form method="POST" action="{{ url_for('send_email') }}">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required><br><br>
+                
+                <label for="subject">Subject:</label>
+                <input type="text" id="subject" name="subject" required><br><br>
+                
+                <label for="body">Body:</label>
+                <textarea id="body" name="body" required></textarea><br><br>
+                
+                <button type="submit">Send Email</button>
+            </form>
+        </div>
+    `;
+    // load to the div_connect_request
+    document.getElementById('div_connect_request').innerHTML = formContent;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     //publicKey = await generateRSAKeyPair()   
@@ -55,9 +81,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (const [user, key] of Object.entries(clientKeys)) {
             let li = document.createElement("li");
             li.innerHTML = `
-                <div class="status-indicator"></div>
+                <div class="status-indicator"></div>                
                 <div class="username">${user}</div>
-                <div class="last-active" id="last-active-${user}"></div>
+                <div class="action"><input type="button" name="connect" value="Invite to chat" onclick="loadRequest()"></div>
             `;
             li.addEventListener("click", () => {
                 chatClient = user;
@@ -76,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             friendsList.appendChild(li);
         }
     }
-
+ 
     document.getElementById('send').onclick = () => {
         sendMessage();
     };
