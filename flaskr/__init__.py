@@ -73,12 +73,13 @@ def create_app():
     @app.route("/index")
     def index():
         if 'loggedin' in session:
+            print(f"User loged in ------> {session['username']}")
             userData = {
-                    'Username': session.get('username')
+                    'Username': session['username']
                 }
         elif 'profile' in session:
             userData = {
-                    'Username': session.get('email')
+                    'Username': session['username']
                 }
         else:
             return redirect(url_for('login'))
@@ -104,7 +105,7 @@ def create_app():
                         user_data = result[0]
                         if check_password_hash(user_data['password'], password):
                             session['loggedin'] = True
-                            session['username'] = user_data['email']
+                            session['username'] = user_data['username']
                             return redirect(url_for('index'))
                         else:
                             msg = "Incorrect Username or Password"
