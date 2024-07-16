@@ -14,13 +14,13 @@ function loadRequest() {
             <p>Send Connection Request</p>
             <form method="POST" action="{{ url_for('send_email') }}">
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required><br><br>
+                <input type="email" id="email" name="email" required>
                 
                 <label for="subject">Subject:</label>
-                <input type="text" id="subject" name="subject" required><br><br>
+                <input type="text" id="subject" name="subject" required>
                 
                 <label for="body">Body:</label>
-                <textarea id="body" name="body" required></textarea><br><br>
+                <textarea id="body" name="body" required></textarea>
                 
                 <button type="submit">Send Email</button>
             </form>
