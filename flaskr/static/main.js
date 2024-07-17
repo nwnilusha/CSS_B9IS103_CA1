@@ -4,6 +4,32 @@ var clientKeys = {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
+/**
+ * Function to load the email request
+ */
+
+function loadRequest() {
+    const formContent = `
+        <div class="email-form-container">
+            <p>Send Connection Request</p>
+            <form method="POST" action="{{ url_for('send_email') }}">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+                
+                <label for="subject">Subject:</label>
+                <input type="text" id="subject" name="subject" required>
+                
+                <label for="body">Body:</label>
+                <textarea id="body" name="body" required></textarea>
+                
+                <button type="submit">Send Email</button>
+            </form>
+        </div>
+    `;
+    // load to the div_connect_request
+    document.getElementById('div_connect_request').innerHTML = formContent;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
