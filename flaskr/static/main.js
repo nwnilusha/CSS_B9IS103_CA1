@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     document.getElementById('logout-btn').onclick = () => {
-        socket.emit('logout', { user_name:  username});
+        confirmLogout()
     };
 });
 
@@ -244,8 +244,38 @@ function isBase64(str) {
     return base64Pattern.test(str);
 }
 
+function confirmLogout() {
 
+    const modal = document.getElementById("confirmationModal");
+    modal.style.display = "block";
 
+    const confirmYes = document.getElementById("confirmYes");
+    const confirmNo = document.getElementById("confirmNo");
+
+    confirmYes.onclick = null;
+    confirmNo.onclick = null;
+
+    confirmYes.addEventListener('click', function() {
+        socket.emit('logout', { user_name:  username});
+    });
+
+    confirmNo.addEventListener('click', function() {
+        modal.style.display = "none";
+    });
+
+    const closeBtn = document.getElementsByClassName("close")[0];
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    };
+
+    window.onclick = function(event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    };
+
+  
+}
 
 function logout() {
     fetch('/logout', {
