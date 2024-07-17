@@ -118,6 +118,7 @@ function loadFriends() {
             <div class="status-indicator"></div>
             <div class="username">${user}</div>
             <div class="last-active" id="last-active-${user}"></div>
+            <div class="action"><input type="button" name="connect" value="Invite to chat" onclick="loadRequest()"></div>
         `;
 
         li.addEventListener("click", () => {
