@@ -314,52 +314,100 @@ body {
 }
 
 /* Style the tab layout */
-.tab {
-    overflow: hidden;
-    background-color: #f1f1f1;
-    border: 1px solid #ccc;
+/* Tab container styling */
+.tab-container {
+    width: 100%;
+    margin: 0 auto;
+    padding-top: 1px;
+}
+
+/* Tab links styling */
+.tabs {
+    list-style-type: none;
+    padding: 0;
     display: flex;
     justify-content: space-around;
+    background-color: #007bff;
+    border-radius: 5px;
+    margin-bottom: 20px;
 }
 
-.tab button {
-    background-color: inherit;
-    border: none;
-    outline: none;
+.tabs li {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
     cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-    font-size: 17px;
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.3s;
 }
 
-.tab button:hover {
-    background-color: #ddd;
+.tabs li.active,
+.tabs li:hover {
+    background-color: #0056b3;
 }
 
-.tab button.active {
-    background-color: #ccc;
-}
-
-/* Style the tab content */
-.tabcontent {
+/* Tab content styling */
+.tab-content {
     display: none;
-    padding: 6px 12px;
-    border-top: none;
 }
 
-.tabcontent h3 {
-    margin-top: 0;
+.tab-content.active {
+    display: block;
 }
 
-.flex-container {
-    display: flex;
-    width: 100%;
-    background-color: skyblue;
-}
-
-.flex-container > div {
-    background-color: #f1f1f1;
-    margin: 10px;
+/* Additional styling for chat content */
+.chat-container {
     padding: 20px;
-    font-size: 30px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chat-content {
+    display: flex;
+    justify-content: space-between;
+}
+
+.friends-list-container {
+    width: 30%;
+}
+
+.chat-messages {
+    width: 65%;
+}
+
+.chat-input {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.chat-input button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.chat-input button:hover {
+    background-color: #0056b3;
 }
