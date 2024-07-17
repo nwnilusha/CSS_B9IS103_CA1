@@ -161,23 +161,12 @@
     <title>Chat Website</title>
 </head>
 
-<body>
-    <div id="landing" class="centered">
-        <div class="landing-container">
-            <input type="text" id="username" placeholder="Enter your username" value="{{ username }}">
-            <button id="join-btn">Join Chat</button>
-        </div>
-    </div>
-
-    <div id="chat" style="display:none;">
+<body onload=initiateUser()>
+    <div id="chat">
         <div class="chat-container">
             <div class="chat-header">
-                Chat Website
+                <h3 id="chat_header_text">Chat Website</h3>
                 <button id="logout-btn">Logout</button>
-                <form action="{{ url_for('composeEmail') }}" method="get">
-                    <input class="form-submit btn signup-btn" type="submit" value="Connect Request">
-                </form>
-                <button id="con-req-btn">Connect Request</button>
             </div>
             <div class="chat-content">
                 <div class="friends-list-container">
@@ -197,6 +186,11 @@
         </div>
     </div>
 </body>
+<script type="text/javascript">
+    var userData = {{ userData | tojson }};
+    console.log(userData.Username)
+
+</script>
 
 </html>
 -->

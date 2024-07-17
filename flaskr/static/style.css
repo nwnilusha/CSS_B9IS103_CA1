@@ -301,3 +301,14 @@ body {
     background-color: #d1e7dd;
     margin-left: auto;
 }
+
+.highlighted {
+    background-color: green;
+    color: white; /* Optional: to make the text color more readable */
+}
+
+.center_user {
+    color: green;
+    font-weight: bold;
+    text-align: center;
+}
