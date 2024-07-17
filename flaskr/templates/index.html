@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <style type="text/css">
+        /* Style the tab */
+
+
+    </style>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,65 +16,72 @@
 </head>
 
 <body onload=initiateUser()> 
-    <div class="chat-container">
-        <div class="chat-header">
-            <h3 id="chat_header_text">Chat Website</h3>
-            <button id="logout-btn">Logout</button>            
-        </div>
-        <div class="tab-container">
-            <ul class="tabs">
-                <li class="tab-link active" data-tab="friend-list">Friend List</li>
-                <li class="tab-link" data-tab="pending-request">Pending Request</li>
-                <li class="tab-link" data-tab="accepted-requests">Accepted Requests</li>
-            </ul>
-            <div id="friend-list" class="tab-content active">
-                <h2>Friend List</h2>
-                <div class="chat-content">
+        <div class="chat-container">
+            <div class="chat-header">
+                <button id="logout-btn">Logout</button>
+            </div>
+            <div class="tab">
+                <button class="tablinks" onclick="openTab(event, 'FriendList')">Friend List</button>
+                <button class="tablinks" onclick="openTab(event, 'PendingRequests')">Pending Requests</button>
+                <button class="tablinks" onclick="openTab(event, 'OpenConnections')">Open Connections</button>
+            </div>            
+
+            <div id="FriendList" class="tabcontent">
+                <div class="flex-container">
                     <div class="friends-list-container">
-                        <ul id="friends-list"></ul>
+                        <h3>Friends</h3>
+                        <ul id="friends-list">
+                        </ul>
                     </div>
-                    <div class="chat-messages" id="chat-messages">
-                        <ul id="chat-msg"></ul>
+                    <div id="div_connect_request">
+                        <h3>Request to join for the chat.</h3>
                     </div>
+                    
+                </div>
+                
+            </div>
+
+            <div id="PendingRequests" class="tabcontent">
+                <h3>Pending Requests</h3>
+                <ul id="pending-requests-list">
+                    <!-- Pending requests will be listed here -->
+                </ul>
+            </div>
+
+            <div id="OpenConnections" class="tabcontent">
+                <h3>Open Connections</h3>
+                <ul id="open-connections-list">
+                    <!-- Open connections will be listed here -->
+                </ul>
+                <div class="chat-input">
+                    <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
+                    <button id="send">Send</button>
                 </div>
             </div>
-            <div id="pending-request" class="tab-content">
-                <h2>Pending Requests</h2>
-            </div>
-            <div id="accepted-requests" class="tab-content">
-                <h2>Accepted Requests</h2>
-                <h2>Friend List</h2>
-                <div class="chat-content">
-                    <div class="friends-list-container">
-                        <ul id="friends-list"></ul>
-                    </div>
-                    <div class="chat-messages" id="chat-messages">
-                        <ul id="chat-msg"></ul>
-                    </div>
-                </div>
-            </div>
+
+            
         </div>
-    </div>
     <script>
         var userData = {{ userData | tojson }};
         console.log(userData.Username);
 
-        // Tab functionality
-        document.addEventListener("DOMContentLoaded", function() {
-            const tabs = document.querySelectorAll(".tab-link");
-            const contents = document.querySelectorAll(".tab-content");
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
 
-            tabs.forEach(tab => {
-                tab.addEventListener("click", function() {
-                    const target = document.querySelector(`#${this.dataset.tab}`);
-
-                    tabs.forEach(t => t.classList.remove("active"));
-                    contents.forEach(c => c.classList.remove("active"));
-
-                    this.classList.add("active");
-                    target.classList.add("active");
-                });
-            });
+        // By default, open the Friend List tab
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelector('.tablinks').click();
         });
     </script>
 </body>
