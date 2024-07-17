@@ -446,3 +446,55 @@ body {
 .chat-input button:hover {
     background-color: #0056b3;
 }
+
+/** tyling for tab menu */
+.tab {
+    overflow: hidden;
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+    display: flex;
+    justify-content: space-around;
+    min-height: 45px;
+}
+
+.tab button {
+    background-color: inherit;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    font-size: 17px;
+}
+
+.tab button:hover {
+    background-color: #ddd;
+}
+
+.tab button.active {
+    background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border-top: none;
+}
+
+.tabcontent h3 {
+    margin-top: 0;
+}
+
+.flex-container {
+  display: flex;
+  width: 100%;
+  background-color: skyblue;
+}
+
+.flex-container > div {
+  background-color: #f1f1f1;
+  margin: 10px;
+  padding: 20px;
+  font-size: 30px;
+}
