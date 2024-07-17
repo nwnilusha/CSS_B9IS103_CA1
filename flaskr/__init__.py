@@ -344,10 +344,10 @@ def create_app():
 
             # Construct the mailto link
             mailto_link = f"mailto:{recipient}?subject={subject}&body={body}"
-
             return redirect(mailto_link)
 
-        return render_template('composeEmail.html')
+        #return render_template(url_for('index'))
+        return redirect(url_for('index'))
 
     return app
 
