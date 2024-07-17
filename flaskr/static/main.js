@@ -56,7 +56,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     socket.on("allUsers", function (data) {
-        clientKeys = data["allUserKeys"];
+        console.log('All clients----->',data['allClients'])
+        for (const [key, email] of Object.entries(data["allClients"])) {
+            console.log('Client key ------ > ',key)
+            clientKeys[key] = {
+                                'publicKey':'',
+                                'email': email,
+                                'status':'send_mail'
+                                 }
+        }
         console.log(userData.Username);
         delete clientKeys[userData.Username];
         loadFriends();
@@ -91,9 +99,11 @@ async function initiateUser() {
         const clientPublicKey = await generateRSAKeyPair();
 
         socket.connect();
-
+        console.log('Username------->',userData.Username)
+        console.log('Email------->',userData.Email)
         socket.on("connect", function () {
-            socket.emit('user_join', { recipient: userData.Username, publicKey: clientPublicKey });
+            // socket.emit('user_join', { recipient: userData.Username, publicKey: clientPublicKey });
+            socket.emit('user_join', { recipient: userData.Username, email: userData.Email});
         });
         
         
@@ -112,18 +122,18 @@ function loadFriends() {
 
     let highlightedLi = null;
 
-    for (const [user, key] of Object.entries(clientKeys)) {
+    for (const [key,user] of Object.entries(clientKeys)) {
         let li = document.createElement("li");
         li.innerHTML = `
             <div class="status-indicator"></div>
-            <div class="username">${user}</div>
-            <div class="last-active" id="last-active-${user}"></div>
+            <div class="username">${key}</div>
+            <div class="last-active" id="last-active-${key}"></div>
             <div class="action"><input type="button" name="connect" value="Invite to chat" onclick="loadRequest()"></div>
         `;
 
         li.addEventListener("click", () => {
-            chatClient = user;
-            chatClientPK = key
+            chatClient = key;
+            chatClientPK = user.publicKey;
 
             let ul = document.getElementById("chat-msg");
             ul.innerHTML = "";
