@@ -1,5 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <title>Chat Website</title>
+</head>
+
+<body onload=initiateUser()> 
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3 id="chat_header_text">Chat Website</h3>
+            <button id="logout-btn">Logout</button>            
+        </div>
+        <div class="tab-container">
+            <ul class="tabs">
+                <li class="tab-link active" data-tab="friend-list">Friend List</li>
+                <li class="tab-link" data-tab="pending-request">Pending Request</li>
+                <li class="tab-link" data-tab="accepted-requests">Accepted Requests</li>
+            </ul>
+            <div id="friend-list" class="tab-content active">
+                <h2>Friend List</h2>
+                <div class="chat-content">
+                    <div class="friends-list-container">
+                        <ul id="friends-list"></ul>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <ul id="chat-msg"></ul>
+                    </div>
+                </div>
+            </div>
+            <div id="pending-request" class="tab-content">
+                <h2>Pending Requests</h2>
+            </div>
+            <div id="accepted-requests" class="tab-content">
+                <h2>Accepted Requests</h2>
+                <h2>Friend List</h2>
+                <div class="chat-content">
+                    <div class="friends-list-container">
+                        <ul id="friends-list"></ul>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <ul id="chat-msg"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var userData = {{ userData | tojson }};
+        console.log(userData.Username);
+
+        // Tab functionality
+        document.addEventListener("DOMContentLoaded", function() {
+            const tabs = document.querySelectorAll(".tab-link");
+            const contents = document.querySelectorAll(".tab-content");
+
+            tabs.forEach(tab => {
+                tab.addEventListener("click", function() {
+                    const target = document.querySelector(`#${this.dataset.tab}`);
+
+                    tabs.forEach(t => t.classList.remove("active"));
+                    contents.forEach(c => c.classList.remove("active"));
+
+                    this.classList.add("active");
+                    target.classList.add("active");
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+<!--
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -55,3 +133,4 @@
 </script>
 
 </html>
+-->

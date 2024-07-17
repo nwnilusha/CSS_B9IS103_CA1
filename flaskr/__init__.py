@@ -1,3 +1,4 @@
+import os
 import secrets
 import string
 from flask import Flask, render_template, request, session, redirect, url_for, g, flash
@@ -8,6 +9,8 @@ import re
 from flask_socketio import SocketIO, emit
 from flaskr.config import Config
 from flaskr.db import Database
+
+from flask_mail import Mail, Message
 
 clients = {}
 broadcastKeys = {}
@@ -22,6 +25,7 @@ socketio = SocketIO()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    mail = Mail(app)
 
     #app.config['MYSQL_HOST'] = 'localhost'
     #app.config['MYSQL_USER'] = 'root'
@@ -307,6 +311,43 @@ def create_app():
     #@app.teardown_appcontext
     #def teardown_db(exception):
     #    close_db()
+
+
+    @app.route('/sendEmail', methods=['GET', 'POST'])
+    def sendEmail():
+        """Send an email from the application to get the email confirmation for registration and 
+        other purposes. 
+        """
+        if request.method == 'POST':
+            email = request.form['email']
+            subject = request.form['subject']
+            body = request.form['body']
+            print(f"email : {email} - subject: {subject} - body : {body}")
+            
+            msg = Message(
+                subject,
+                recipients=[email]
+            )
+            msg.body = body
+            mail.send(msg)
+            flash('Email sent successfully!', 'success')
+            return redirect(url_for('sendEmail'))
+
+        return render_template('sendEmail.html')
+    
+    @app.route('/composeEmail', methods=['GET', 'POST'])
+    def composeEmail():
+        if request.method == 'POST':
+            recipient = request.form.get('recipient')
+            subject = request.form.get('subject')
+            body = request.form.get('body')
+
+            # Construct the mailto link
+            mailto_link = f"mailto:{recipient}?subject={subject}&body={body}"
+
+            return redirect(mailto_link)
+
+        return render_template('composeEmail.html')
 
     return app
 

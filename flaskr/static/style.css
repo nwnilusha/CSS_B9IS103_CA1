@@ -145,6 +145,99 @@ body {
     color: #333;
 }
 
+.friends-list-container input[type=submit] {
+    width: 100%;
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 5px 5px 5px;
+    margin: 5px 5px 5px 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .friends-list-container input[type=button] {
+    width: 100%;
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 5px 5px 5px;
+    margin: 5px 5px 5px 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .friends-list-container  input[type=submit]:hover {
+    background-color: #45a049;
+  }
+  
+  .email-form-container {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.email-form-container h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.email-form-container form {
+    display: flex;
+    flex-direction: column;
+}
+
+.email-form-container label {
+    margin-bottom: 5px;
+    font-weight: normal;
+    color: #555;
+    font-size: 15px;
+}
+
+.email-form-container input[type="email"],
+.email-form-container input[type="text"],
+.email-form-container textarea {
+    width: 100%;
+    padding: 5px 5px 5px 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    color: #333;
+}
+
+.email-form-container input[type="email"]:focus,
+.email-form-container input[type="text"]:focus,
+.email-form-container textarea:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.email-form-container textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.email-form-container button[type="submit"] {
+    padding: 10px 15px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.email-form-container button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+
 .chat-messages {
     flex: 1;
     padding: 20px;
@@ -254,4 +347,102 @@ body {
     color: black;
     text-decoration: none;
     cursor: pointer;
+}
+/* Style the tab layout */
+/* Tab container styling */
+.tab-container {
+    width: 100%;
+    margin: 0 auto;
+    padding-top: 1px;
+}
+
+/* Tab links styling */
+.tabs {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    justify-content: space-around;
+    background-color: #007bff;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.tabs li {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.tabs li.active,
+.tabs li:hover {
+    background-color: #0056b3;
+}
+
+/* Tab content styling */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Additional styling for chat content */
+.chat-container {
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chat-content {
+    display: flex;
+    justify-content: space-between;
+}
+
+.friends-list-container {
+    width: 30%;
+}
+
+.chat-messages {
+    width: 65%;
+}
+
+.chat-input {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.chat-input button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.chat-input button:hover {
+    background-color: #0056b3;
 }
