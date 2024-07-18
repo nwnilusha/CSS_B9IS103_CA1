@@ -27,7 +27,7 @@ body {
 }
 
 .landing-container input {
-    margin-bottom: 15px;
+    margin-bottom: 0px;
     padding: 15px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -72,6 +72,7 @@ body {
     border-radius: 10px 10px 0 0;
     font-size: 28px;
     font-weight: bold;
+    margin-bottom: 0px;
 }
 
 .chat-header button {
@@ -203,7 +204,7 @@ body {
 .email-form-container textarea {
     width: 100%;
     padding: 5px 5px 5px 5px;
-    margin-bottom: 15px;
+    margin-bottom: 1px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 16px;
@@ -385,6 +386,7 @@ body {
 /* Tab content styling */
 .tab-content {
     display: none;
+    padding: 0px 0px 0px 0px;
 }
 
 .tab-content.active {
@@ -399,12 +401,6 @@ body {
     background-color: #f9f9f9;
 }
 
-.chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
 
 .chat-content {
     display: flex;
@@ -478,7 +474,8 @@ body {
 /* Style the tab content */
 .tabcontent {
     display: none;
-    padding: 6px 12px;
+    /*padding: 6px 12px;*/
+    padding 0 0 0 0;
     border-top: none;
 }
 
@@ -494,7 +491,7 @@ body {
 
 .flex-container > div {
   background-color: #f1f1f1;
-  margin: 10px;
+  margin: 5px;
   padding: 20px;
-  font-size: 30px;
+  font-size: 20px;
 }

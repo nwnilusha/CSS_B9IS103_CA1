@@ -44,7 +44,7 @@ function loadRequest() {
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>            
+            <input type="email" id="email" name="email" value="" required>            
             <label for="subject">Subject:</label>
             <input type="text" id="subject" name="subject" required>            
             <label for="body">Body:</label>
@@ -150,6 +150,7 @@ function loadFriends() {
     let highlightedLi = null;
 
     for (const [key,user] of Object.entries(clientKeys)) {
+        console.log("Nish----> "+key)
         let li = document.createElement("li");
         li.innerHTML = `
             <div class="status-indicator"></div>
