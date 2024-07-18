@@ -78,12 +78,10 @@ def create_app():
     def index():
         if 'loggedin' in session:
             print(f"User loged in ------> {session['username']}")
+            print(f"User email ------> {session['email']}")
             userData = {
-                    'Username': session['username']
-                }
-        elif 'profile' in session:
-            userData = {
-                    'Username': session['username']
+                    'Username': session['username'],
+                    'Email': session['email']
                 }
         else:
             return redirect(url_for('login'))
@@ -110,6 +108,7 @@ def create_app():
                         if check_password_hash(user_data['password'], password):
                             session['loggedin'] = True
                             session['username'] = user_data['username']
+                            session['email'] = user_data['email']
                             return redirect(url_for('index'))
                         else:
                             msg = "Incorrect Username or Password"
@@ -147,7 +146,8 @@ def create_app():
 
         email = user_info['email']
         session['loggedin'] = True
-        session['username'] = email
+        session['username'] = email.split('@')[0] if email else 'unknown'
+        session['email'] = email
 
         return redirect(url_for('index'))
 
@@ -225,20 +225,20 @@ def create_app():
     def handle_user_join(data):
         try:
             print(f"Recepient Name-------> {data['recipient']}")
-            print(f"Recepient Public Key-------> {data['publicKey']}")
+            print(f"Recepient Public Key-------> {data['email']}")
             # if 'recipient' not in data or 'publicKey' not in data:
             #     raise ValueError("Missing 'recipient' or 'publicKey' in data")
 
             recipient = data['recipient']
-            public_key = data['publicKey']
+            # public_key = data['publicKey']
 
             print(f"User {recipient} Joined!")
 
             clients[recipient] = request.sid
-            broadcastKeys[recipient] = public_key
-            allClients[request.sid] = recipient
+            # broadcastKeys[recipient] = public_key
+            allClients[recipient] = data['email']
 
-            emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+            emit("allUsers", {"allClients": allClients}, broadcast=True)
         
         except ValueError as ve:
             print(f"ValueError: {ve}")
