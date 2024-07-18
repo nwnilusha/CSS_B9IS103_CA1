@@ -263,3 +263,27 @@ function logout() {
 }
 
 // Typing indicator in the Client-Side
+document.getElementById("message-input").addEventListener("input", function () {
+    socket.emit('typing', { recipient: chatClient });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => socket.emit('stop_typing', { recipient: chatClient }), 1000);
+});
+
+socket.on('typing', function (data) {
+    // Display typing indicator
+    let typingElement = document.getElementById('typing-indicator');
+    if (!typingElement) {
+        typingElement = document.createElement('div');
+        typingElement.id = 'typing-indicator';
+        typingElement.innerText = `${data.sender} is typing...`;
+        document.querySelector('.chat-messages').appendChild(typingElement);
+    }
+});
+
+socket.on('stop_typing', function (data) {
+    // Remove typing indicator
+    let typingElement = document.getElementById('typing-indicator');
+    if (typingElement) {
+        typingElement.remove();
+    }
+});
