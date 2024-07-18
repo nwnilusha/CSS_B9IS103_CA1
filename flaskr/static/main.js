@@ -1,7 +1,7 @@
 const socket = io({ autoConnect: false });
 let privateKey, publicKey;
 var clientKeys = {};
-var username, chatClient, PKRequestClient, chatClientPK;
+var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
 
@@ -30,8 +30,6 @@ document.addEventListener('DOMContentLoaded', function () {
             // Open mailto link
             window.location.href = mailtoLink;
 
-            socket.emit('send_email_notification', { recipient_name: PKRequestClient, notification: "Public Key Request Send" });
-
             // Reset the form values after submission
             form.reset();
         });
@@ -41,14 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
-   socket.on('email_notify',async (data) => {
+   socket.on('email_notify', function (data) {
         try {
-            let ul = document.getElementById("pending-requests-list");
-            let li = document.createElement("li");
-            li.appendChild(document.createTextNode(data["sender"] + " : " + data['nitification']));
-            li.classList.add("left-align");
-            ul.appendChild(li);
-            ul.scrollTop = ul.scrollHeight;
+            clientKeys[data['sender']].status = "con_recv"
+            loadFriends();
         } catch (error) {
             console.error("Error message error:", error);
         }
@@ -78,15 +72,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('All clients----->',data['allClients'])
         for (const [key, email] of Object.entries(data["allClients"])) {
             console.log('Client key ------ > ',key)
-            clientKeys[key] = {
-                                'username':key,
-                                'publicKey':'',
-                                'email': email,
-                                'status':'send_mail'
-                                 }
+            console.log('Username ------ > ',username)
+            if (!(key in clientKeys) && (key != username)) {
+                console.log("All Users------>",key);
+                clientKeys[key] = {
+                    'username':key,
+                    'publicKey':'',
+                    'email': email,
+                    'status':'available'
+                     }
+            }  
         }
-        console.log(userData.Username);
-        delete clientKeys[userData.Username];
+        
         loadFriends();
     })
 
@@ -175,7 +172,10 @@ function loadFriends() {
  */
 function loadRequest(obj) {
     console.log('Load request-------->',obj)
-    PKRequestClient = obj.username;
+
+    clientKeys[obj.username].status = "con_sent"
+    socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+    loadFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
