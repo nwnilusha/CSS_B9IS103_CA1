@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', async () => {
    socket.on('email_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv"
-            loadFriends();
+            loadConReceiveFriends()
+            loadAvailableFriends();
         } catch (error) {
             console.error("Error message error:", error);
         }
@@ -93,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }  
         }
         
-        loadFriends();
+        loadAvailableFriends();
     })
 
     socket.on('logout_redirect', function() {
@@ -143,7 +144,7 @@ async function initiateUser() {
 /**
  * Function to load the chat list
  */
-function loadFriends() {
+function loadAvailableFriends() {
     var friendsList = NaN;    
 
     let highlightedLi = null;
@@ -154,31 +155,7 @@ function loadFriends() {
         console.log("user=="+user['email']);
         console.log("user=="+user['status']);
 
-        if (user['status'] == 'con_recv')
-        {
-            friendsList = document.getElementById("received-list");
-            friendsList.innerHTML = "";
-            li.innerHTML = `
-                <div class="status-indicator"></div>
-                <div class="username">${key}</div>
-                <div class="last-active" id="last-active-${key}"></div>
-                <div class="action"><input type="button" name="connect" value="Add Passphrase" onclick='loadRequest(${JSON.stringify(user)})'></div>
-            `;
-        }
-        else if(user['status'] == 'accepted')
-        {
-            friendsList = document.getElementById("connections-list");
-            friendsList.innerHTML = "";
-            li.innerHTML = `
-                <div class="status-indicator"></div>
-                <div class="username">${key}</div>
-                <div class="last-active" id="last-active-${key}"></div>
-                <div class="action"><input type="button" name="add_friend" value="Start Chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
-            `;
-        }
-        else
-        {
-            friendsList = document.getElementById("friends-list");
+        friendsList = document.getElementById("friends-list");
             friendsList.innerHTML = "";
             console.log("user['status']====="+user['status']);
 
@@ -191,7 +168,7 @@ function loadFriends() {
                     <div class="action"><input type="button" value="Invitation Sent" disabled></div>
                 `;
             }
-            else
+            else if (user['status'] == 'available')
             {
                 li.innerHTML = `
                     <div class="status-indicator"></div>
@@ -200,9 +177,69 @@ function loadFriends() {
                     <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
                 `;
             }
-            
-                
-        }
+
+        friendsList.appendChild(li);
+    }
+}
+
+/**
+ * Function to load the chat list
+ */
+function loadConReceiveFriends() {
+    var friendsList = NaN;    
+
+    let li = document.createElement("li");
+
+    for (const [key,user] of Object.entries(clientKeys)) {
+        console.log("user=="+user['username']);
+        console.log("user=="+user['email']);
+        console.log("user=="+user['status']);
+
+
+
+        friendsList = document.getElementById("received-list");
+            friendsList.innerHTML = "";
+            console.log("user['status'] loadConReceiveFriends====="+user['status']);
+            if(user['status'] == 'con_recv')
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="add_friend" value="Start Chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
+                `;
+            }
+
+        friendsList.appendChild(li);
+    }
+}
+
+
+/**
+ * Function to load the chat list
+ */
+function loadAccepetdFriends() {
+    var friendsList = NaN;    
+
+    let highlightedLi = null;
+    let li = document.createElement("li");
+
+    for (const [key,user] of Object.entries(clientKeys)) {
+        console.log("user=="+user['username']);
+        console.log("user=="+user['email']);
+        console.log("user=="+user['status']);
+
+        friendsList = document.getElementById("connections-list");
+            friendsList.innerHTML = "";
+            if(user['status'] == 'accepted')
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="connect" value="Add Passphrase" onclick='loadRequest(${JSON.stringify(user)})'></div>
+                `;
+            }
 
         friendsList.appendChild(li);
     }
@@ -216,7 +253,7 @@ function loadRequest(obj) {
 
     clientKeys[obj.username].status = "con_sent"
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
-    loadFriends();
+    loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
