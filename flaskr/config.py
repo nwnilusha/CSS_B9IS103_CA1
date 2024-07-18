@@ -2,6 +2,13 @@
 # This file used to overide the default configurations.
 # Add all your configurations to here.
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+
 class Config:
     SECRET_KEY = "ABCD1234"
     MYSQL_USER = "dbs"

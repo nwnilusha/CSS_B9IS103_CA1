@@ -261,3 +261,5 @@ function logout() {
         console.error("Logout error:", error);
     });
 }
+
+// Typing indicator in the Client-Side
