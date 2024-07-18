@@ -495,3 +495,28 @@ body {
   padding: 20px;
   font-size: 20px;
 }
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+
+.status-indicator.con_recv {
+    background-color: blue; 
+}
+
+.status-indicator.accepted {
+    background-color: green; 
+}
+
+.status-indicator.pending {
+    background-color: orange; 
+}
+
+.status-indicator.rejected {
+    background-color: red; 
+}

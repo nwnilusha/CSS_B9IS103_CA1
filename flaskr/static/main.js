@@ -147,61 +147,70 @@ function loadFriends() {
     var friendsList = NaN;    
 
     let highlightedLi = null;
-    let li = document.createElement("li");
+    document.getElementById("received-list").innerHTML = "";
+    document.getElementById("connections-list").innerHTML = "";
+    document.getElementById("friends-list").innerHTML = "";
 
-    for (const [key,user] of Object.entries(clientKeys)) {
-        console.log("user=="+user['username']);
-        console.log("user=="+user['email']);
-        console.log("user=="+user['status']);
+    for (const [key, user] of Object.entries(clientKeys)) {
+        console.log("user==", user['username']);
+        console.log("email==", user['email']);
+        console.log("status==", user['status']);
 
-        if (user['status'] == 'con_recv')
-        {
-            friendsList = document.getElementById("received-list");
-            friendsList.innerHTML = "";
-            li.innerHTML = `
-                <div class="status-indicator"></div>
-                <div class="username">${key}</div>
-                <div class="last-active" id="last-active-${key}"></div>
-                <div class="action"><input type="button" name="connect" value="Add Passphrase" onclick='loadRequest(${JSON.stringify(user)})'></div>
-            `;
-        }
-        else if(user['status'] == 'accepted')
-        {
-            friendsList = document.getElementById("connections-list");
-            friendsList.innerHTML = "";
-            li.innerHTML = `
-                <div class="status-indicator"></div>
-                <div class="username">${key}</div>
-                <div class="last-active" id="last-active-${key}"></div>
-                <div class="action"><input type="button" name="add_friend" value="Start Chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
-            `;
-        }
-        else
-        {
-            friendsList = document.getElementById("friends-list");
-            friendsList.innerHTML = "";
-            console.log("user['status']====="+user['status']);
+        let li = document.createElement("li");
+        let friendsList;
+        let statusClass = ''; 
+        
+        switch (user['status']) {
+            case 'con_recv':
+                friendsList = document.getElementById("received-list");
+                statusClass = 'con_recv';
+                li.innerHTML = `
+                    <div class="status-indicator ${statusClass}"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action">
+                        <input type="button" name="connect" value="Add Passphrase" onclick='loadRequest(${JSON.stringify(user)})'>
+                    </div>
+                `;
+                break;
 
-            if(user['status'] == 'con_sent')
-            {
+            case 'accepted':
+                friendsList = document.getElementById("connections-list");
+                statusClass = 'accepted';
+                li.innerHTML = `
+                    <div class="status-indicator ${statusClass}"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action">
+                        <input type="button" name="add_friend" value="Start Chat" onclick='loadRequest(${JSON.stringify(user)})'>
+                    </div>
+                `;
+                break;
+
+            case 'con_sent':
+                friendsList = document.getElementById("friends-list");
+                statusClass = 'pending'; 
+                li.innerHTML = `
+                    <div class="status-indicator ${statusClass}"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action">
+                        <input type="button" value="Invitation Sent" disabled>
+                    </div>
+                `;
+                break;
+
+            default:
+                friendsList = document.getElementById("friends-list");
                 li.innerHTML = `
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" value="Invitation Sent" disabled></div>
+                    <div class="action">
+                        <input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'>
+                    </div>
                 `;
-            }
-            else
-            {
-                li.innerHTML = `
-                    <div class="status-indicator"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
-                `;
-            }
-            
-                
+                break;
         }
 
         friendsList.appendChild(li);
