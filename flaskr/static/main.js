@@ -1,5 +1,14 @@
 const socket = io({ autoConnect: false });
 let privateKey, publicKey;
+/**
+ * Data structure to store client data
+ * clientKeys[x] = {'username':uname, 'publicKey':'', 'email': email, 'status':'con_status'}
+ * where status can have following values
+ * 1. con_sent
+ * 2. accepted
+ * 3. con_recv
+ * 4. available
+ */
 var clientKeys = {};
 var username, chatClient, PKRequestClient, chatClientPK;
 var isCurrentUser = true;
@@ -75,14 +84,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     socket.on("allUsers", function (data) {
-        console.log('All clients----->',data['allClients'])
+        //console.log('All clients----->',data['allClients'])
         for (const [key, email] of Object.entries(data["allClients"])) {
-            console.log('Client key ------ > ',key)
+            //console.log('Client key ------ > ',key)
             clientKeys[key] = {
                                 'username':key,
                                 'publicKey':'',
                                 'email': email,
-                                'status':'send_mail'
+                                'status':'available'
                                  }
         }
         console.log(userData.Username);
@@ -137,34 +146,64 @@ async function initiateUser() {
 
 
 function loadFriends() {
-    const friendsList = document.getElementById("friends-list");
-    friendsList.innerHTML = "";
+    var friendsList = NaN;    
 
     let highlightedLi = null;
+    let li = document.createElement("li");
 
     for (const [key,user] of Object.entries(clientKeys)) {
-        console.log('User obj -------->',user)
-        console.log("Nish----> "+key)
-        let li = document.createElement("li");
-        li.innerHTML = `
-            <div class="status-indicator"></div>
-            <div class="username">${key}</div>
-            <div class="last-active" id="last-active-${key}"></div>
-            <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
-        `;
+        console.log("user=="+user['username']);
+        console.log("user=="+user['email']);
+        console.log("user=="+user['status']);
 
-        // li.addEventListener("click", () => {
-        //     chatClient = key;
-        //     chatClientPK = user.publicKey;
+        if (user['status'] == 'con_recv')
+        {
+            friendsList = document.getElementById("received-list");
+            friendsList.innerHTML = "";
+            li.innerHTML = `
+                <div class="status-indicator"></div>
+                <div class="username">${key}</div>
+                <div class="last-active" id="last-active-${key}"></div>
+                <div class="action"><input type="button" name="connect" value="Add Passphrase" onclick='loadRequest(${JSON.stringify(user)})'></div>
+            `;
+        }
+        else if(user['status'] == 'accepted')
+        {
+            friendsList = document.getElementById("connections-list");
+            friendsList.innerHTML = "";
+            li.innerHTML = `
+                <div class="status-indicator"></div>
+                <div class="username">${key}</div>
+                <div class="last-active" id="last-active-${key}"></div>
+                <div class="action"><input type="button" name="add_friend" value="Start Chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
+            `;
+        }
+        else
+        {
+            friendsList = document.getElementById("friends-list");
+            friendsList.innerHTML = "";
 
-        //     let ul = document.getElementById("chat-msg");
-        //     ul.innerHTML = "";
-        //     let li = document.createElement("li");
-        //     li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
-        //     li.classList.add("center_user");
-        //     ul.appendChild(li);
-        //     ul.scrollTop = ul.scrollHeight;
-        // });
+            if(user['status'] == 'con_sent')
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" value="Invitation Sent" disabled></div>
+                `;
+            }
+            else
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
+                `;
+            }
+            
+                
+        }
 
         friendsList.appendChild(li);
     }
