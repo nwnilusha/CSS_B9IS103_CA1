@@ -38,9 +38,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-
-
-
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
@@ -147,6 +144,7 @@ function loadFriends() {
 
     for (const [key,user] of Object.entries(clientKeys)) {
         console.log('User obj -------->',user)
+        console.log("Nish----> "+key)
         let li = document.createElement("li");
         li.innerHTML = `
             <div class="status-indicator"></div>
