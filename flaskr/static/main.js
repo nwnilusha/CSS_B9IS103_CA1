@@ -4,30 +4,57 @@ var clientKeys = {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
+
+// Function to handle form events
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("Page loaded. Initializing form event handlers...");
+
+    // Select all forms
+    const forms = document.querySelectorAll('form');
+
+    // Add event listener to each form
+    forms.forEach(form => {
+        form.addEventListener('submit', function (event) {
+            // Prevent default form submission, this is from the original form
+            event.preventDefault();
+
+            // Serialize form data
+            const formData = new FormData(form);
+            const email = formData.get('email');
+            const subject = encodeURIComponent(formData.get('subject'));
+            const body = encodeURIComponent(formData.get('body'));
+
+            // Create mailto link
+            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+
+            // Open mailto link
+            window.location.href = mailtoLink;
+
+            // Reset the form values after submission
+            form.reset();
+        });
+    });
+});
+
+
 /**
  * Function to load the email request
  */
-
 function loadRequest() {
     const formContent = `
         <div class="email-form-container">
-            <p>Send Connection Request</p>
-            <form method="POST" action="{{ url_for('send_email') }}">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-                
-                <label for="subject">Subject:</label>
-                <input type="text" id="subject" name="subject" required>
-                
-                <label for="body">Body:</label>
-                <textarea id="body" name="body" required></textarea>
-                
-                <button type="submit">Send Email</button>
-            </form>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" required>            
+            <label for="body">Body:</label>
+            <textarea id="body" name="body" required></textarea>            
+            <button type="submit">Send Email</button>
         </div>
     `;
     // load to the div_connect_request
-    document.getElementById('div_connect_request').innerHTML = formContent;
+    //document.getElementById('div_connect_request').innerHTML = formContent;
+    document.getElementById('email_request_form').innerHTML = formContent;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
