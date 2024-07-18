@@ -13,8 +13,9 @@ from flaskr.db import Database
 from flask_mail import Mail, Message
 
 clients = {}
-broadcastKeys = {}
+clientsSID = {}
 allClients = {}
+newClient = {}
 
 def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
@@ -234,7 +235,8 @@ def create_app():
 
             print(f"User {recipient} Joined!")
 
-            clients[recipient] = request.sid
+            clientsSID[recipient] = request.sid
+            clients[request.sid] = recipient
             # broadcastKeys[recipient] = public_key
             allClients[recipient] = data['email']
 
@@ -257,10 +259,12 @@ def create_app():
     def handle_send_email_notification(data):
         try:
             recipient = data['recipient_name']
-            if recipient in clients:
-                recipient_sid = clients[recipient]
-                print("Client: -------"+recipient_sid)
-                emit('email_notify', {'nitification': data['notification'], 'sender': allClients[request.sid]}, room=recipient_sid)
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
+                emit('email_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
             else:
                 print('Recipient not connected.')
         except Exception as ex:
@@ -273,23 +277,23 @@ def create_app():
             recipient = data['recipient_name']
             print("Recepient name: -------"+recipient)
             print("Recepient message: -------"+data['message'])
-            if recipient in clients:
-                recipient_sid = clients[recipient]
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
                 print("Client: -------"+recipient_sid)
-                emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
+                emit('message', {'message': data['message'], 'sender': clients[request.sid]}, room=recipient_sid)
             else:
                 print('Recipient not connected.')
         except Exception as ex:
             print(f"An error occurred: {ex}")
 
-    @socketio.on('new_message')
-    def handle_new_message(message):
-        print(f"New Message : {message}")
-        username = None
-        for user in clients:
-            if user == request.sid:
-                username = clients[request.sid]
-        emit("chat", {"message": message, "username": username}, broadcast=True)
+    # @socketio.on('new_message')
+    # def handle_new_message(message):
+    #     print(f"New Message : {message}")
+    #     username = None
+    #     for user in clients:
+    #         if user == request.sid:
+    #             username = clients[request.sid]
+    #     emit("chat", {"message": message, "username": username}, broadcast=True)
 
     @socketio.on('logout')
     def handle_logout(data):
