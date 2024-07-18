@@ -140,8 +140,9 @@ async function initiateUser() {
     }
 }
 
-
-
+/**
+ * Function to load the chat list
+ */
 function loadFriends() {
     var friendsList = NaN;    
 
@@ -179,6 +180,7 @@ function loadFriends() {
         {
             friendsList = document.getElementById("friends-list");
             friendsList.innerHTML = "";
+            console.log("user['status']====="+user['status']);
 
             if(user['status'] == 'con_sent')
             {
@@ -223,7 +225,7 @@ function loadRequest(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="submit">Send Email</button>
+            <button type="submit">Request To Connect</button>
         </div>
     `;
     // load to the div_connect_request
