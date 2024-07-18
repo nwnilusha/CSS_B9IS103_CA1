@@ -18,6 +18,7 @@
 <body onload=initiateUser()> 
         <div class="chat-container">
             <div class="chat-header">
+                <h3 id="chat_header_text">Chat Website</h3>
                 <button id="logout-btn">Logout</button>
             </div>
             <div class="tab">
@@ -64,7 +65,8 @@
         </div>
     <script>
         var userData = {{ userData | tojson }};
-        console.log(userData.Username);
+        console.log('User data username -------',userData.Username);
+        console.log('User data email -------',userData.Email);
 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
@@ -105,6 +107,16 @@
 </head>
 
 <body onload=initiateUser()>
+    <div id="confirmationModal" class="confirm_modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalHeading">Logout</h2>
+            <p id="modelDetails">Are you sure you want to logout from the GOBUZZ</p>
+            <button id="confirmYes">Yes</button>
+            <button id="confirmNo">No</button>
+        </div>
+    </div>
+
     <div id="chat">
         <div class="chat-container">
             <div class="chat-header">
