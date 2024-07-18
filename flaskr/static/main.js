@@ -1,7 +1,7 @@
 const socket = io({ autoConnect: false });
 let privateKey, publicKey;
 var clientKeys = {};
-var username, chatClient, chatClientPK;
+var username, chatClient, PKRequestClient, chatClientPK;
 var isCurrentUser = true;
 
 
@@ -30,37 +30,29 @@ document.addEventListener('DOMContentLoaded', function () {
             // Open mailto link
             window.location.href = mailtoLink;
 
+            socket.emit('send_email_notification', { recipient_name: PKRequestClient, notification: "Public Key Request Send" });
+
             // Reset the form values after submission
             form.reset();
         });
     });
 });
 
-
-/**
- * Function to load the email request
- */
-function loadRequest() {
-    const formContent = `
-        <div class="email-form-container">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="" required>            
-            <label for="subject">Subject:</label>
-            <input type="text" id="subject" name="subject" required>            
-            <label for="body">Body:</label>
-            <textarea id="body" name="body" required></textarea>            
-            <button type="submit">Send Email</button>
-        </div>
-    `;
-    // load to the div_connect_request
-    //document.getElementById('div_connect_request').innerHTML = formContent;
-    document.getElementById('email_request_form').innerHTML = formContent;
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
-   
+   socket.on('email_notify',async (data) => {
+        try {
+            let ul = document.getElementById("pending-requests-list");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(data["sender"] + " : " + data['nitification']));
+            li.classList.add("left-align");
+            ul.appendChild(li);
+            ul.scrollTop = ul.scrollHeight;
+        } catch (error) {
+            console.error("Error message error:", error);
+        }
+   })
 
     socket.on('message', async (data) => {
         try {
@@ -87,6 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         for (const [key, email] of Object.entries(data["allClients"])) {
             console.log('Client key ------ > ',key)
             clientKeys[key] = {
+                                'username':key,
                                 'publicKey':'',
                                 'email': email,
                                 'status':'send_mail'
@@ -123,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initiateUser() {
     try {
         username = userData.Username;
-        const clientPublicKey = await generateRSAKeyPair();
+        publicKey = await generateRSAKeyPair();
 
         socket.connect();
         console.log('Username------->',userData.Username)
@@ -150,30 +143,53 @@ function loadFriends() {
     let highlightedLi = null;
 
     for (const [key,user] of Object.entries(clientKeys)) {
+        console.log('User obj -------->',user)
         console.log("Nish----> "+key)
         let li = document.createElement("li");
         li.innerHTML = `
             <div class="status-indicator"></div>
             <div class="username">${key}</div>
             <div class="last-active" id="last-active-${key}"></div>
-            <div class="action"><input type="button" name="connect" value="Invite to chat" onclick="loadRequest()"></div>
+            <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
         `;
 
-        li.addEventListener("click", () => {
-            chatClient = key;
-            chatClientPK = user.publicKey;
+        // li.addEventListener("click", () => {
+        //     chatClient = key;
+        //     chatClientPK = user.publicKey;
 
-            let ul = document.getElementById("chat-msg");
-            ul.innerHTML = "";
-            let li = document.createElement("li");
-            li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
-            li.classList.add("center_user");
-            ul.appendChild(li);
-            ul.scrollTop = ul.scrollHeight;
-        });
+        //     let ul = document.getElementById("chat-msg");
+        //     ul.innerHTML = "";
+        //     let li = document.createElement("li");
+        //     li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+        //     li.classList.add("center_user");
+        //     ul.appendChild(li);
+        //     ul.scrollTop = ul.scrollHeight;
+        // });
 
         friendsList.appendChild(li);
     }
+}
+
+/**
+ * Function to load the email request
+ */
+function loadRequest(obj) {
+    console.log('Load request-------->',obj)
+    PKRequestClient = obj.username;
+    const formContent = `
+        <div class="email-form-container">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="${obj.email}" required>            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
+            <label for="body">Body:</label>
+            <textarea id="body" name="body" required>${publicKey}</textarea>            
+            <button type="submit">Send Email</button>
+        </div>
+    `;
+    // load to the div_connect_request
+    //document.getElementById('div_connect_request').innerHTML = formContent;
+    document.getElementById('email_request_form').innerHTML = formContent;
 }
 
 

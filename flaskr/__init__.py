@@ -253,7 +253,20 @@ def create_app():
             emit('error', {'message': 'An unexpected error occurred. Please try again later.'})
 
 
+    @socketio.on('send_email_notification')
+    def handle_send_email_notification(data):
+        try:
+            recipient = data['recipient_name']
+            if recipient in clients:
+                recipient_sid = clients[recipient]
+                print("Client: -------"+recipient_sid)
+                emit('email_notify', {'nitification': data['notification'], 'sender': allClients[request.sid]}, room=recipient_sid)
+            else:
+                print('Recipient not connected.')
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
 
+    
     @socketio.on('message')
     def handle_message(data):
         try:
