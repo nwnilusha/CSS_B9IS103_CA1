@@ -217,7 +217,7 @@ function loadConReceiveFriends() {
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="add_friend" value="Start Chat" onclick='loadReply(${JSON.stringify(user)})'></div>
+                    <div class="action"><input type="button" name="add_friend" value="Reply email" onclick='loadReply(${JSON.stringify(user)})'></div>
                 `;
             }
 
@@ -248,8 +248,20 @@ function loadAccepetdFriends() {
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="connect" value="Add Passphrase" onclick='loadRequest(${JSON.stringify(user)})'></div>
                 `;
+
+                li.addEventListener("click", () => {
+                    chatClient = key;
+                    chatClientPK = user.publicKey
+
+                    let ul = document.getElementById("chat-msg");
+                    ul.innerHTML = "";
+                    let li = document.createElement("li");
+                    li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+                    li.classList.add("center_user");
+                    ul.appendChild(li);
+                    ul.scrollTop = ul.scrollHeight;
+                });
             }
 
         friendsList.appendChild(li);
@@ -289,7 +301,7 @@ function loadReply(obj) {
 
     clientKeys[obj.username].status = "accepted"
     socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-    loadAvailableFriends();
+    loadConReceiveFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
@@ -303,7 +315,7 @@ function loadReply(obj) {
     `;
     // load to the div_connect_request
     //document.getElementById('div_connect_request').innerHTML = formContent;
-    document.getElementById('email_request_form').innerHTML = formContent;
+    document.getElementById('email_reply_form').innerHTML = formContent;
 }
 
 
