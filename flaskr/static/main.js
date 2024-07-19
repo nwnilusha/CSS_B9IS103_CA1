@@ -48,15 +48,26 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
-   socket.on('email_notify', function (data) {
+   socket.on('email_send_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv"
-            loadConReceiveFriends()
+            loadConReceiveFriends();
             loadAvailableFriends();
         } catch (error) {
             console.error("Error message error:", error);
         }
    })
+   
+
+   socket.on('email_reply_notify', function (data) {
+        try {
+            clientKeys[data['sender']].status = "con_recv";
+            loadAccepetdFriends();
+            loadConReceiveFriends();
+        } catch (error) {
+            console.error("Error message error:", error);
+        }
+    })
 
     socket.on('message', async (data) => {
         try {
