@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
    socket.on('email_reply_notify', function (data) {
         try {
-            clientKeys[data['sender']].status = "con_recv";
+            clientKeys[data['sender']].status = "con_reply_recv";
             loadAvailableFriends();
             loadConReceiveFriends();
         } catch (error) {
@@ -213,7 +213,7 @@ function loadConReceiveFriends() {
         friendsList = document.getElementById("received-list");
             friendsList.innerHTML = "";
             console.log("user['status'] loadConReceiveFriends====="+user['status']);
-            if(user['status'] == 'con_recv' && user['publicKey'] == "")
+            if((user['status'] == 'con_recv' || user['status'] == 'con_reply_recv') && user['publicKey'] == "")
             {
                 li.innerHTML = `
                     <div class="status-indicator"></div>
@@ -242,10 +242,12 @@ function loadConReceiveFriends() {
  */
 function OnAddParsePhaseClick(friendObj)
 {
+
     var parsePhase = document.getElementById("body_parsephase").value;
     console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
     clientKeys[friendObj.username].publicKey=parsePhase;
     loadConReceiveFriends();
+    loadAccepetdFriends();
 }
 
 
@@ -340,7 +342,6 @@ function loadReply(obj) {
             <button type="submit">Request To Connect</button>
         </div>
         `;
-
         clientKeys[obj.username].status = "accepted"
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
@@ -355,6 +356,9 @@ function loadReply(obj) {
             <div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
         </div>
         `;
+        if(clientKeys[obj.username].status == "con_reply_recv"){
+            clientKeys[obj.username].status = "accepted";
+        }
     }
     
     // load to the div_connect_request
