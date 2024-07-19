@@ -80,9 +80,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on("allUsers", function (data) {
         //console.log('All clients----->',data['allClients'])
         for (const [key, email] of Object.entries(data["allClients"])) {
+            console.log("-------start-------"); 
             console.log('Client key ------ > ',key)
             console.log('Username ------ > ',username)
-            if (!(key in clientKeys) && (key != username)) {
+            if ((!(key in clientKeys)) && (key != username)) {
                 console.log("All Users------>",key);
                 clientKeys[key] = {
                     'username':key,
@@ -90,7 +91,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     'email': email,
                     'status':'available'
                      }
-            }  
+            }
+            console.log("-------end-------"); 
         }
         
         loadFriends();
