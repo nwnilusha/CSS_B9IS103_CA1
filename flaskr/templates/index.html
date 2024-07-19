@@ -55,33 +55,23 @@
             </div>
 
             <div id="OpenConnections" class="tabcontent">
-                <div class="chat-container">
-                    <div class="chat-content"></div>
-                        <div class="friends-list-container">
-                            <h3>Connected Friends</h3>
-                            <ul id="connections-list"></ul>
-                        </div>
-                        <div class="chat-messages" id="chat-messages">
-                            <ul id="chat-msg">
-                            </ul>
+                <div class="flex-container">
+                    <div class="friends-list-container">
+                        <h3>Connected Friends</h3>
+                        <ul id="connections-list"></ul>
+                    </div>
+                    <div>
+                        <div class="chat-container">                        
+                            <div class="chat-content">
+                                <div class="chat-input">
+                                    <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
+                                    <button id="send">Send</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="chat-input">
-                        <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
-                        <button id="send">Send</button>
-                    </div>                   
                 </div>
-
-                <!--<h3>Open Connections</h3>
-                <ul id="connections-list">
-                </ul>
-                <div class="chat-input">
-                    <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
-                    <button id="send">Send</button>
-                </div>-->
             </div>
-
-            
         </div>
     <script>
         var userData = {{ userData | tojson }};
