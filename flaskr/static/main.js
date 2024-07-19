@@ -108,7 +108,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         loadAvailableFriends();
-    })
+    });
+
+    socket.on('logoutUsers', function (data) {
+        if(clientKeys.hasKey(data)) {
+            clientKeys.delete(data);
+            loadAvailableFriends();
+            loadConReceiveFriends();
+            loadAccepetdFriends();
+        }
+    });
 
     socket.on('logout_redirect', function() {
         logout()
@@ -129,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     document.getElementById('logout-btn').onclick = () => {
-        confirmLogout()
+        socket.emit('logout', { user_name:  username});
     };
 });
 
@@ -277,6 +286,7 @@ function loadAccepetdFriends() {
                 `;
 
                 li.addEventListener("click", () => {
+                    console.log('Start Chat--------->',key);
                     chatClient = key;
                     chatClientPK = user.publicKey
 
