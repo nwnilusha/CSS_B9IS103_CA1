@@ -222,7 +222,7 @@ function loadConReceiveFriends() {
                     <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)})'></div>
                 `;
             }
-            else
+            else if(user['status'] == 'con_recv' && user['publicKey'] != "")
             {
                 li.innerHTML = `
                     <div class="status-indicator"></div>
@@ -325,10 +325,6 @@ function loadReply(obj) {
     
     formContent = NaN;
     
-    clientKeys[obj.username].status = "accepted"
-    socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-    loadConReceiveFriends();
-    loadAccepetdFriends();
 
     if(clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "")
     {
