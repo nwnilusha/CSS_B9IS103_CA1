@@ -264,13 +264,28 @@ def create_app():
                 print(f"Recepient Name: ------->>{recipient}")
                 print(f"Recepient SID: ------->>{recipient_sid}")
                 print(f"Sender: ------->>{clients[request.sid]}")
-                emit('email_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
+                emit('email_send_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
             else:
                 print('Recipient not connected.')
         except Exception as ex:
             print(f"An error occurred: {ex}")
 
-    
+    @socketio.on('reply_email_notification')
+    def handle_reply_email_notification(data):
+        try:
+            recipient = data['recipient_name']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
+                emit('email_reply_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
+            else:
+                print('Recipient not connected.')
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
+
     @socketio.on('message')
     def handle_message(data):
         try:
