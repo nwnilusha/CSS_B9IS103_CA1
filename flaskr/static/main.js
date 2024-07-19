@@ -217,7 +217,7 @@ function loadConReceiveFriends() {
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="add_friend" value="Start Chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
+                    <div class="action"><input type="button" name="add_friend" value="Start Chat" onclick='loadReply(${JSON.stringify(user)})'></div>
                 `;
             }
 
@@ -264,6 +264,31 @@ function loadRequest(obj) {
 
     clientKeys[obj.username].status = "con_sent"
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+    loadAvailableFriends();
+    const formContent = `
+        <div class="email-form-container">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="${obj.email}" required>            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
+            <label for="body">Body:</label>
+            <textarea id="body" name="body" required>${publicKey}</textarea>            
+            <button type="submit">Request To Connect</button>
+        </div>
+    `;
+    // load to the div_connect_request
+    //document.getElementById('div_connect_request').innerHTML = formContent;
+    document.getElementById('email_request_form').innerHTML = formContent;
+}
+
+/**
+ * Function to load the email request
+ */
+function loadReply(obj) {
+    console.log('Load request-------->',obj)
+
+    clientKeys[obj.username].status = "accepted"
+    socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
     loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
