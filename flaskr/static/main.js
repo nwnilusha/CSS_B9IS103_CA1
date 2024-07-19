@@ -92,9 +92,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on("allUsers", function (data) {
         //console.log('All clients----->',data['allClients'])
         for (const [key, email] of Object.entries(data["allClients"])) {
+            console.log("-------start-------"); 
             console.log('Client key ------ > ',key)
             console.log('Username ------ > ',username)
-            if (!(key in clientKeys) && (key != username)) {
+            if ((!(key in clientKeys)) && (key != username)) {
                 console.log("All Users------>",key);
                 clientKeys[key] = {
                     'username':key,
@@ -102,7 +103,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     'email': email,
                     'status':'available'
                      }
-            }  
+            }
+            console.log("-------end-------"); 
         }
         
         loadAvailableFriends();
@@ -217,7 +219,7 @@ function loadConReceiveFriends() {
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="add_friend" value="Reply email" onclick='loadReply(${JSON.stringify(user)})'></div>
+                    <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)})'></div>
                 `;
             }
 
@@ -301,8 +303,13 @@ function loadReply(obj) {
 
     clientKeys[obj.username].status = "accepted"
     socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-    loadConReceiveFriends();
-    const formContent = `
+    
+    formContent = NaN;
+
+    if(clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "")
+    {
+        console.log("TEST----1");
+        formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" value="${obj.email}" required>            
@@ -312,7 +319,20 @@ function loadReply(obj) {
             <textarea id="body" name="body" required>${publicKey}</textarea>            
             <button type="submit">Request To Connect</button>
         </div>
-    `;
+        `;
+        loadConReceiveFriends();
+    }
+    else
+    {
+        formContent = `
+        <div class="email-form-container">
+            <label for="body">ParsePhase:</label>
+            <textarea id="body" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>            
+            <button type="submit">Add ParsePhase</button>
+        </div>
+        `;
+    }
+    
     // load to the div_connect_request
     //document.getElementById('div_connect_request').innerHTML = formContent;
     document.getElementById('email_reply_form').innerHTML = formContent;
