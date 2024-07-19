@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    socket.on('email_reply_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv";
-            loadAccepetdFriends();
+            loadAvailableFriends();
             loadConReceiveFriends();
         } catch (error) {
             console.error("Error message error:", error);
@@ -244,6 +244,7 @@ function loadAccepetdFriends() {
 
         friendsList = document.getElementById("connections-list");
             friendsList.innerHTML = "";
+            console.log("user['status'] loadAccepetdFriends====="+user['status']);
             if(user['status'] == 'accepted')
             {
                 li.innerHTML = `
@@ -300,11 +301,13 @@ function loadRequest(obj) {
  */
 function loadReply(obj) {
     console.log('Load request-------->',obj)
-
-    clientKeys[obj.username].status = "accepted"
-    socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
     
     formContent = NaN;
+    
+    clientKeys[obj.username].status = "accepted"
+    socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+    loadConReceiveFriends();
+    loadAccepetdFriends();
 
     if(clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "")
     {
@@ -320,7 +323,10 @@ function loadReply(obj) {
             <button type="submit">Request To Connect</button>
         </div>
         `;
-        loadConReceiveFriends();
+        //clientKeys[obj.username].status = "accepted"
+        // socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        // loadConReceiveFriends();
+        // loadAccepetdFriends();
     }
     else
     {
