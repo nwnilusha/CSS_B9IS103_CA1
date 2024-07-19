@@ -48,14 +48,26 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
-   socket.on('email_notify', function (data) {
+   socket.on('email_send_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv"
-            loadFriends();
+            loadConReceiveFriends();
+            loadAvailableFriends();
         } catch (error) {
             console.error("Error message error:", error);
         }
    })
+   
+
+   socket.on('email_reply_notify', function (data) {
+        try {
+            clientKeys[data['sender']].status = "con_recv";
+            loadAvailableFriends();
+            loadConReceiveFriends();
+        } catch (error) {
+            console.error("Error message error:", error);
+        }
+    })
 
     socket.on('message', async (data) => {
         try {
@@ -80,9 +92,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on("allUsers", function (data) {
         //console.log('All clients----->',data['allClients'])
         for (const [key, email] of Object.entries(data["allClients"])) {
+            console.log("-------start-------"); 
             console.log('Client key ------ > ',key)
             console.log('Username ------ > ',username)
-            if (!(key in clientKeys) && (key != username)) {
+            if ((!(key in clientKeys)) && (key != username)) {
                 console.log("All Users------>",key);
                 clientKeys[key] = {
                     'username':key,
@@ -90,10 +103,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     'email': email,
                     'status':'available'
                      }
-            }  
+            }
+            console.log("-------end-------"); 
         }
         
-        loadFriends();
+        loadAvailableFriends();
     })
 
     socket.on('logout_redirect', function() {
@@ -143,53 +157,23 @@ async function initiateUser() {
 /**
  * Function to load the chat list
  */
-function loadFriends() {
+function loadAvailableFriends() {
     var friendsList = NaN;    
 
     let highlightedLi = null;
-    document.getElementById("received-list").innerHTML = "";
-    document.getElementById("connections-list").innerHTML = "";
-    document.getElementById("friends-list").innerHTML = "";
+    let li = document.createElement("li");
 
-    for (const [key, user] of Object.entries(clientKeys)) {
-        console.log("user==", user['username']);
-        console.log("email==", user['email']);
-        console.log("status==", user['status']);
+    for (const [key,user] of Object.entries(clientKeys)) {
+        console.log("user=="+user['username']);
+        console.log("user=="+user['email']);
+        console.log("user=="+user['status']);
 
-        let li = document.createElement("li");
-        let friendsList;
-        let statusClass = ''; 
-        
-        switch (user['status']) {
-            case 'con_recv':
-                friendsList = document.getElementById("received-list");
-                statusClass = 'con_recv';
-                li.innerHTML = `
-                    <div class="status-indicator ${statusClass}"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action">
-                        <input type="button" name="connect" value="Add Passphrase" onclick='loadRequest(${JSON.stringify(user)})'>
-                    </div>
-                `;
-                break;
+        friendsList = document.getElementById("friends-list");
+            friendsList.innerHTML = "";
+            console.log("user['status']====="+user['status']);
 
-            case 'accepted':
-                friendsList = document.getElementById("connections-list");
-                statusClass = 'accepted';
-                li.innerHTML = `
-                    <div class="status-indicator ${statusClass}"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action">
-                        <input type="button" name="add_friend" value="Start Chat" onclick='loadRequest(${JSON.stringify(user)})'>
-                    </div>
-                `;
-                break;
-
-            case 'con_sent':
-                friendsList = document.getElementById("friends-list");
-                statusClass = 'pending'; 
+            if(user['status'] == 'con_sent')
+            {
                 li.innerHTML = `
                     <div class="status-indicator ${statusClass}"></div>
                     <div class="username">${key}</div>
@@ -198,10 +182,9 @@ function loadFriends() {
                         <input type="button" value="Invitation Sent" disabled>
                     </div>
                 `;
-                break;
-
-            default:
-                friendsList = document.getElementById("friends-list");
+            }
+            else if (user['status'] == 'available')
+            {
                 li.innerHTML = `
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
@@ -210,11 +193,126 @@ function loadFriends() {
                         <input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'>
                     </div>
                 `;
-                break;
-        }
+            }
 
         friendsList.appendChild(li);
     }
+}
+
+/**
+ * Function to load the chat list
+ */
+function loadConReceiveFriends() {
+    var friendsList = NaN;    
+
+    let li = document.createElement("li");
+
+    for (const [key,user] of Object.entries(clientKeys)) {
+        console.log("user=="+user['username']);
+        console.log("user=="+user['email']);
+        console.log("user=="+user['status']);
+
+
+
+        friendsList = document.getElementById("received-list");
+            friendsList.innerHTML = "";
+            console.log("user['status'] loadConReceiveFriends====="+user['status']);
+            if(user['status'] == 'con_recv' && user['publicKey'] == "")
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)})'></div>
+                `;
+            }
+            else if(user['status'] == 'con_recv' && user['publicKey'] != "")
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="add_friend" value="Send Confirmation" onclick='loadReply(${JSON.stringify(user)})'></div>
+                `;
+            }
+
+        friendsList.appendChild(li);
+    }
+}
+
+/**
+ * onclick method for button click 
+ * @param {*} friendObj 
+ */
+function OnAddParsePhaseClick(friendObj)
+{
+    //console.log("OnAddParsePhaseClick----:");
+    var parsePhase = document.getElementById("body_parsephase").value;
+    console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
+    clientKeys[friendObj.username].publicKey=parsePhase;
+    loadConReceiveFriends();
+}
+
+
+/**
+ * Function to load the chat list
+ */
+function loadAccepetdFriends() {
+    var friendsList = NaN;    
+
+    let highlightedLi = null;
+    let li = document.createElement("li");
+
+    for (const [key,user] of Object.entries(clientKeys)) {
+        console.log("user=="+user['username']);
+        console.log("user=="+user['email']);
+        console.log("user=="+user['status']);
+
+        friendsList = document.getElementById("connections-list");
+            friendsList.innerHTML = "";
+            console.log("user['status'] loadAccepetdFriends====="+user['status']);
+            if(user['status'] == 'accepted')
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                `;
+
+                li.addEventListener("click", () => {
+                    chatClient = key;
+                    chatClientPK = user.publicKey
+
+                    let ul = document.getElementById("chat-msg");
+                    ul.innerHTML = "";
+                    let li = document.createElement("li");
+                    li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+                    li.classList.add("center_user");
+                    ul.appendChild(li);
+                    ul.scrollTop = ul.scrollHeight;
+                });
+            }
+
+        friendsList.appendChild(li);
+    }
+}
+
+/**
+ * Button click function for sending connection request via an email
+ * this will open the email client for sending the email.
+ */
+function OnRequestSend()
+{
+    // Get field data for email.
+    const email = document.getElementById("email").value;
+    const subject = document.getElementById('subject').value;
+    const body = document.getElementById('body').value;
+
+    // Create mailto link
+    const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+
+    // Open mailto link
+    window.location.href = mailtoLink;
 }
 
 /**
@@ -225,7 +323,7 @@ function loadRequest(obj) {
 
     clientKeys[obj.username].status = "con_sent"
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
-    loadFriends();
+    loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
@@ -234,12 +332,58 @@ function loadRequest(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="submit">Request To Connect</button>
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
         </div>
     `;
     // load to the div_connect_request
     //document.getElementById('div_connect_request').innerHTML = formContent;
     document.getElementById('email_request_form').innerHTML = formContent;
+}
+
+/**
+ * Function to load the email request
+ */
+function loadReply(obj) {
+    console.log('Load request-------->',obj)
+    
+    formContent = NaN;
+    
+
+    if(clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "")
+    {
+        console.log("TEST----1");
+        formContent = `
+        <div class="email-form-container">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="${obj.email}" required>            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
+            <label for="body">Body:</label>
+            <textarea id="body" name="body" required>${publicKey}</textarea>            
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+        </div>
+        `;
+
+        clientKeys[obj.username].status = "accepted"
+        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        loadConReceiveFriends();
+        loadAccepetdFriends();
+    }
+    else
+    {
+        //<div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
+        formContent = `
+        <div class="email-form-container">
+            <label for="body_parsephase">ParsePhase:</label>
+            <textarea id="body_parsephase" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>
+            <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
+        </div>
+        `;
+    }
+    
+    // load to the div_connect_request
+    //document.getElementById('div_connect_request').innerHTML = formContent;
+    document.getElementById('email_reply_form').innerHTML = formContent;
 }
 
 
