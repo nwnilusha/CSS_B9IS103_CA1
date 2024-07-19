@@ -213,7 +213,7 @@ function loadConReceiveFriends() {
         friendsList = document.getElementById("received-list");
             friendsList.innerHTML = "";
             console.log("user['status'] loadConReceiveFriends====="+user['status']);
-            if(user['status'] == 'con_recv')
+            if(user['status'] == 'con_recv' && user['publicKey'] == "")
             {
                 li.innerHTML = `
                     <div class="status-indicator"></div>
@@ -222,9 +222,30 @@ function loadConReceiveFriends() {
                     <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)})'></div>
                 `;
             }
+            else
+            {
+                li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="add_friend" value="Send Confirmation" onclick='loadReply(${JSON.stringify(user)})'></div>
+                `;
+            }
 
         friendsList.appendChild(li);
     }
+}
+
+/**
+ * onclick method for button click 
+ * @param {*} friendObj 
+ */
+function OnAddParsePhaseClick(friendObj)
+{
+    var parsePhase = document.getElementById("body_parsephase").value;
+    console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
+    clientKeys[friendObj.username].publicKey=parsePhase;
+    loadConReceiveFriends();
 }
 
 
@@ -323,18 +344,19 @@ function loadReply(obj) {
             <button type="submit">Request To Connect</button>
         </div>
         `;
-        //clientKeys[obj.username].status = "accepted"
-        // socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-        // loadConReceiveFriends();
-        // loadAccepetdFriends();
+
+        clientKeys[obj.username].status = "accepted"
+        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        loadConReceiveFriends();
+        loadAccepetdFriends();
     }
     else
     {
         formContent = `
         <div class="email-form-container">
-            <label for="body">ParsePhase:</label>
-            <textarea id="body" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>            
-            <button type="submit">Add ParsePhase</button>
+            <label for="body_parsephase">ParsePhase:</label>
+            <textarea id="body_parsephase" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>
+            <div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
         </div>
         `;
     }
