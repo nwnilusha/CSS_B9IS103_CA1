@@ -13,8 +13,9 @@ from flaskr.db import Database
 from flask_mail import Mail, Message
 
 clients = {}
-broadcastKeys = {}
+clientsSID = {}
 allClients = {}
+newClient = {}
 
 def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
@@ -78,12 +79,10 @@ def create_app():
     def index():
         if 'loggedin' in session:
             print(f"User loged in ------> {session['username']}")
+            print(f"User email ------> {session['email']}")
             userData = {
-                    'Username': session['username']
-                }
-        elif 'profile' in session:
-            userData = {
-                    'Username': session['username']
+                    'Username': session['username'],
+                    'Email': session['email']
                 }
         else:
             return redirect(url_for('login'))
@@ -110,6 +109,7 @@ def create_app():
                         if check_password_hash(user_data['password'], password):
                             session['loggedin'] = True
                             session['username'] = user_data['username']
+                            session['email'] = user_data['email']
                             return redirect(url_for('index'))
                         else:
                             msg = "Incorrect Username or Password"
@@ -147,7 +147,8 @@ def create_app():
 
         email = user_info['email']
         session['loggedin'] = True
-        session['username'] = email
+        session['username'] = email.split('@')[0] if email else 'unknown'
+        session['email'] = email
 
         return redirect(url_for('index'))
 
@@ -225,20 +226,21 @@ def create_app():
     def handle_user_join(data):
         try:
             print(f"Recepient Name-------> {data['recipient']}")
-            print(f"Recepient Public Key-------> {data['publicKey']}")
+            print(f"Recepient Public Key-------> {data['email']}")
             # if 'recipient' not in data or 'publicKey' not in data:
             #     raise ValueError("Missing 'recipient' or 'publicKey' in data")
 
             recipient = data['recipient']
-            public_key = data['publicKey']
+            # public_key = data['publicKey']
 
             print(f"User {recipient} Joined!")
 
-            clients[recipient] = request.sid
-            broadcastKeys[recipient] = public_key
-            allClients[request.sid] = recipient
+            clientsSID[recipient] = request.sid
+            clients[request.sid] = recipient
+            # broadcastKeys[recipient] = public_key
+            allClients[recipient] = data['email']
 
-            emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+            emit("allUsers", {"allClients": allClients}, broadcast=True)
         
         except ValueError as ve:
             print(f"ValueError: {ve}")
@@ -253,6 +255,36 @@ def create_app():
             emit('error', {'message': 'An unexpected error occurred. Please try again later.'})
 
 
+    @socketio.on('send_email_notification')
+    def handle_send_email_notification(data):
+        try:
+            recipient = data['recipient_name']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
+                emit('email_send_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
+            else:
+                print('Recipient not connected.')
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
+    @socketio.on('reply_email_notification')
+    def handle_reply_email_notification(data):
+        try:
+            recipient = data['recipient_name']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
+                emit('email_reply_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
+            else:
+                print('Recipient not connected.')
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
 
     @socketio.on('message')
     def handle_message(data):
@@ -260,23 +292,23 @@ def create_app():
             recipient = data['recipient_name']
             print("Recepient name: -------"+recipient)
             print("Recepient message: -------"+data['message'])
-            if recipient in clients:
-                recipient_sid = clients[recipient]
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
                 print("Client: -------"+recipient_sid)
-                emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
+                emit('message', {'message': data['message'], 'sender': clients[request.sid]}, room=recipient_sid)
             else:
                 print('Recipient not connected.')
         except Exception as ex:
             print(f"An error occurred: {ex}")
 
-    @socketio.on('new_message')
-    def handle_new_message(message):
-        print(f"New Message : {message}")
-        username = None
-        for user in clients:
-            if user == request.sid:
-                username = clients[request.sid]
-        emit("chat", {"message": message, "username": username}, broadcast=True)
+    # @socketio.on('new_message')
+    # def handle_new_message(message):
+    #     print(f"New Message : {message}")
+    #     username = None
+    #     for user in clients:
+    #         if user == request.sid:
+    #             username = clients[request.sid]
+    #     emit("chat", {"message": message, "username": username}, broadcast=True)
 
     @socketio.on('logout')
     def handle_logout(data):

@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    display: flex;
+    /*display: flex;*/
     justify-content: center;
     align-items: center;
     height: 100vh;
@@ -27,7 +27,7 @@ body {
 }
 
 .landing-container input {
-    margin-bottom: 15px;
+    margin-bottom: 0px;
     padding: 15px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -54,8 +54,6 @@ body {
 .chat-container {
     display: flex;
     flex-direction: column;
-    width: 900px;
-    height: 700px;
     border: 1px solid #ccc;
     border-radius: 10px;
     background-color: #fff;
@@ -72,6 +70,7 @@ body {
     border-radius: 10px 10px 0 0;
     font-size: 28px;
     font-weight: bold;
+    margin-bottom: 0px;
 }
 
 .chat-header button {
@@ -203,7 +202,7 @@ body {
 .email-form-container textarea {
     width: 100%;
     padding: 5px 5px 5px 5px;
-    margin-bottom: 15px;
+    margin-bottom: 1px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 16px;
@@ -222,7 +221,8 @@ body {
     resize: vertical;
 }
 
-.email-form-container button[type="submit"] {
+.email-form-container button {
+    margin-top: 5px;
     padding: 10px 15px;
     font-size: 16px;
     color: #fff;
@@ -233,7 +233,7 @@ body {
     transition: background-color 0.3s ease;
 }
 
-.email-form-container button[type="submit"]:hover {
+.email-form-container button:hover {
     background-color: #0056b3;
 }
 
@@ -313,6 +313,41 @@ body {
     text-align: center;
 }
 
+
+.confirm_modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%; /* Could be more or less, depending on screen size */
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
 /* Style the tab layout */
 /* Tab container styling */
 .tab-container {
@@ -350,6 +385,7 @@ body {
 /* Tab content styling */
 .tab-content {
     display: none;
+    padding: 0px 0px 0px 0px;
 }
 
 .tab-content.active {
@@ -364,12 +400,6 @@ body {
     background-color: #f9f9f9;
 }
 
-.chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
 
 .chat-content {
     display: flex;
@@ -443,7 +473,8 @@ body {
 /* Style the tab content */
 .tabcontent {
     display: none;
-    padding: 6px 12px;
+    /*padding: 6px 12px;*/
+    padding 0 0 0 0;
     border-top: none;
 }
 
@@ -459,7 +490,7 @@ body {
 
 .flex-container > div {
   background-color: #f1f1f1;
-  margin: 10px;
+  margin: 5px;
   padding: 20px;
-  font-size: 30px;
+  font-size: 20px;
 }
