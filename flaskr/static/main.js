@@ -242,6 +242,7 @@ function loadConReceiveFriends() {
  */
 function OnAddParsePhaseClick(friendObj)
 {
+    //console.log("OnAddParsePhaseClick----:");
     var parsePhase = document.getElementById("body_parsephase").value;
     console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
     clientKeys[friendObj.username].publicKey=parsePhase;
@@ -293,6 +294,24 @@ function loadAccepetdFriends() {
 }
 
 /**
+ * Button click function for sending connection request via an email
+ * this will open the email client for sending the email.
+ */
+function OnRequestSend()
+{
+    // Get field data for email.
+    const email = document.getElementById("email").value;
+    const subject = document.getElementById('subject').value;
+    const body = document.getElementById('body').value;
+
+    // Create mailto link
+    const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+
+    // Open mailto link
+    window.location.href = mailtoLink;
+}
+
+/**
  * Function to load the email request
  */
 function loadRequest(obj) {
@@ -309,7 +328,7 @@ function loadRequest(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="submit">Request To Connect</button>
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
         </div>
     `;
     // load to the div_connect_request
@@ -337,7 +356,7 @@ function loadReply(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="submit">Request To Connect</button>
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
         </div>
         `;
 
@@ -348,11 +367,12 @@ function loadReply(obj) {
     }
     else
     {
+        //<div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
         formContent = `
         <div class="email-form-container">
             <label for="body_parsephase">ParsePhase:</label>
             <textarea id="body_parsephase" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>
-            <div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
+            <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
         </div>
         `;
     }
