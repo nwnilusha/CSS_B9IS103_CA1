@@ -108,15 +108,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         loadAvailableFriends();
-    })
+    });
 
     socket.on('logoutUsers', function (data) {
         var clientKey = data['logoutUser']
-        console.log('User logout========>',clientKey)
-        console.log('Client keys========>',clientKeys)
+        console.log('User logout========>', clientKey)
+        console.log('Client keys========>', clientKeys)
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
-            console.log('Client keys after delete========>',clientKeys)
+            console.log('Client keys after delete========>', clientKeys)
             loadAvailableFriends();
             loadConReceiveFriends();
             loadAccepetdFriends();
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     document.getElementById('logout-btn').onclick = () => {
-        socket.emit('logout', { user_name:  username});
+        socket.emit('logout', { user_name: username });
     };
 
 
@@ -177,16 +177,17 @@ function loadAvailableFriends() {
 
     let highlightedLi = null;
     let li = document.createElement("li");
+
     friendsList = document.getElementById("friends-list");
-            friendsList.innerHTML = "";
+    friendsList.innerHTML = "";
 
-    for (const [key,user] of Object.entries(clientKeys)) {
-        console.log("user=="+user['username']);
-        console.log("user=="+user['email']);
-        console.log("user=="+user['status']);
+    for (const [key, user] of Object.entries(clientKeys)) {
+        console.log("user==" + user['username']);
+        console.log("user==" + user['email']);
+        console.log("user==" + user['status']);
 
-        
-            console.log("user['status']====="+user['status']);
+
+        console.log("user['status'] available=====" + user['status']);
 
             if(user['status'] == 'con_sent')
             {
@@ -218,18 +219,21 @@ function loadConReceiveFriends() {
     var friendsList = NaN;    
 
     let li = document.createElement("li");
+
     friendsList = document.getElementById("received-list");
     friendsList.innerHTML = "";
 
-    for (const [key,user] of Object.entries(clientKeys)) {
-        console.log("user=="+user['username']);
-        console.log("user=="+user['email']);
-        console.log("user=="+user['status']);
+    for (const [key, user] of Object.entries(clientKeys)) {
+        console.log("user==" + user['username']);
+        console.log("user==" + user['email']);
+        console.log("user==" + user['status']);
 
-            console.log("user['status'] loadConReceiveFriends====="+user['status']);
-            if((user['status'] == 'con_recv' || user['status'] == 'con_reply_recv') && user['publicKey'] == "")
-            {
-                li.innerHTML = `
+
+
+
+        console.log("user['status'] loadConReceiveFriends=====" + user['status']);
+        if ((user['status'] == 'con_recv' || user['status'] == 'con_reply_recv') && user['publicKey'] == "") {
+            li.innerHTML = `
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
@@ -274,18 +278,23 @@ function loadAccepetdFriends() {
     let highlightedLi = null;
     let li = document.createElement("li");
 
-    friendsList = document.getElementById("connections-list");
-            friendsList.innerHTML = "";
-
     for (const [key,user] of Object.entries(clientKeys)) {
         console.log("user=="+user['username']);
         console.log("user=="+user['email']);
         console.log("user=="+user['status']);
 
-            console.log("user['status'] loadAccepetdFriends====="+user['status']);
-            if(user['status'] == 'accepted')
-            {
-                li.innerHTML = `
+    friendsList = document.getElementById("connections-list");
+    friendsList.innerHTML = "";
+
+    for (const [key, user] of Object.entries(clientKeys)) {
+        console.log("user==" + user['username']);
+        console.log("user==" + user['email']);
+        console.log("user==" + user['status']);
+
+
+        console.log("user['status'] loadAccepetdFriends=====" + user['status']);
+        if (user['status'] == 'accepted') {
+            li.innerHTML = `
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
@@ -295,14 +304,14 @@ function loadAccepetdFriends() {
                     chatClient = key;
                     chatClientPK = user.publicKey
 
-                    let ul = document.getElementById("chat-msg");
-                    let li = document.createElement("li");
-                    li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
-                    li.classList.add("center_user");
-                    ul.appendChild(li);
-                    ul.scrollTop = ul.scrollHeight;
-                });
-            }
+                let ul = document.getElementById("chat-msg");
+                let li = document.createElement("li");
+                li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+                li.classList.add("center_user");
+                ul.appendChild(li);
+                ul.scrollTop = ul.scrollHeight;
+            });
+        }
 
         friendsList.appendChild(li);
     }
@@ -312,8 +321,35 @@ function loadAccepetdFriends() {
  * Button click function for sending connection request via an email
  * this will open the email client for sending the email.
  */
-function OnRequestSend(obj,status)
-{
+function OnRequestSend(obj) {
+
+    clientKeys[obj.username].status = "con_sent"
+    socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+    loadAvailableFriends();
+
+    // Get field data for email.
+    const email = document.getElementById("email").value;
+    const subject = document.getElementById('subject').value;
+    const body = document.getElementById('body').value;
+
+    // Create mailto link
+    const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+
+    // Open mailto link
+    window.location.href = mailtoLink;
+}
+
+/**
+ * Button click function for sending connection request via an email
+ * this will open the email client for sending the email.
+ */
+function OnReplySend(obj) {
+    
+    clientKeys[obj.username].status = "accepted"
+    socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+    loadConReceiveFriends();
+    loadAccepetdFriends();
+
     // Get field data for email.
     const email = document.getElementById("email").value;
     const subject = document.getElementById('subject').value;
@@ -343,7 +379,7 @@ function loadRequest(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)},"con_sent")'>Request To Connect</button>
+            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)})'>Request To Connect</button>
         </div>
     `;
     // load to the div_connect_request
@@ -371,7 +407,7 @@ function loadReply(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)},"accepted")'>Request To Connect</button>
+            <button type="button" onclick='OnReplySend(${JSON.stringify(obj)})'>Request To Connect</button>
         </div>
         `;
         clientKeys[obj.username].status = "accepted"
