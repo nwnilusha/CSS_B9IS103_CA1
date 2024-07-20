@@ -218,6 +218,9 @@ def create_app():
     def handle_connect():
         print('Client Connected')
 
+    @socketio.on('connect')
+    def handle_connect():
+        print('Client Connected')
 
     @socketio.on('user_join')
     def handle_user_join(data):
@@ -234,6 +237,7 @@ def create_app():
 
             clientsSID[recipient] = request.sid
             clients[request.sid] = recipient
+            # broadcastKeys[recipient] = public_key
             allClients[recipient] = data['email']
 
             emit("allUsers", {"allClients": allClients}, broadcast=True)
@@ -257,9 +261,9 @@ def create_app():
             recipient = data['recipient_name']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
-                print(f"Send Recepient Name: ------->>{recipient}")
-                print(f"Sene Recepient SID: ------->>{recipient_sid}")
-                print(f"Send Sender: ------->>{clients[request.sid]}")
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
                 emit('email_send_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
             else:
                 print('Recipient not connected.')
@@ -272,9 +276,9 @@ def create_app():
             recipient = data['recipient_name']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
-                print(f"Reply Recepient Name: ------->>{recipient}")
-                print(f"Reply Recepient SID: ------->>{recipient_sid}")
-                print(f"Reply Sender: ------->>{clients[request.sid]}")
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
                 emit('email_reply_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
             else:
                 print('Recipient not connected.')

@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         loadAvailableFriends();
-    });
+    })
 
     socket.on('logoutUsers', function (data) {
         var clientKey = data['logoutUser']
@@ -144,6 +144,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('logout-btn').onclick = () => {
         socket.emit('logout', { user_name:  username});
     };
+
+
 });
 
 async function initiateUser() {
@@ -175,9 +177,8 @@ function loadAvailableFriends() {
 
     let highlightedLi = null;
     let li = document.createElement("li");
-
     friendsList = document.getElementById("friends-list");
-    friendsList.innerHTML = "";
+            friendsList.innerHTML = "";
 
     for (const [key,user] of Object.entries(clientKeys)) {
         console.log("user=="+user['username']);
@@ -185,7 +186,7 @@ function loadAvailableFriends() {
         console.log("user=="+user['status']);
 
         
-            console.log("user['status'] available====="+user['status']);
+            console.log("user['status']====="+user['status']);
 
             if(user['status'] == 'con_sent')
             {
@@ -217,18 +218,14 @@ function loadConReceiveFriends() {
     var friendsList = NaN;    
 
     let li = document.createElement("li");
-
     friendsList = document.getElementById("received-list");
     friendsList.innerHTML = "";
-    
+
     for (const [key,user] of Object.entries(clientKeys)) {
         console.log("user=="+user['username']);
         console.log("user=="+user['email']);
         console.log("user=="+user['status']);
 
-
-
-        
             console.log("user['status'] loadConReceiveFriends====="+user['status']);
             if((user['status'] == 'con_recv' || user['status'] == 'con_reply_recv') && user['publicKey'] == "")
             {
@@ -278,13 +275,12 @@ function loadAccepetdFriends() {
     let li = document.createElement("li");
 
     friendsList = document.getElementById("connections-list");
-    friendsList.innerHTML = "";
+            friendsList.innerHTML = "";
 
     for (const [key,user] of Object.entries(clientKeys)) {
         console.log("user=="+user['username']);
         console.log("user=="+user['email']);
         console.log("user=="+user['status']);
-
 
             console.log("user['status'] loadAccepetdFriends====="+user['status']);
             if(user['status'] == 'accepted')
@@ -296,7 +292,6 @@ function loadAccepetdFriends() {
                 `;
 
                 li.addEventListener("click", () => {
-                    console.log('Start Chat--------->',key);
                     chatClient = key;
                     chatClientPK = user.publicKey
 
