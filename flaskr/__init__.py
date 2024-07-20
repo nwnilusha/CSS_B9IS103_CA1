@@ -237,6 +237,7 @@ def create_app():
 
             clientsSID[recipient] = request.sid
             clients[request.sid] = recipient
+            # broadcastKeys[recipient] = public_key
             allClients[recipient] = data['email']
 
             emit("allUsers", {"allClients": allClients}, broadcast=True)
@@ -313,14 +314,13 @@ def create_app():
     def handle_logout(data):
         try:
             print(f"Logout Data : {data}")
-            if request.sid in clients:
-                user = clients[request.sid]
+            if request.sid in allClients:
+                user = allClients[request.sid]
                 print(f"logout user data : {user}")
-                del clientsSID[user]
-                del allClients[user]
-                del clients[request.sid]
-
-                emit("logoutUsers", {"logoutUser": user}, broadcast=True)
+                del clients[user]
+                del broadcastKeys[user]
+                del allClients[request.sid]
+                emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
 
                 print("User logging out !!!!")
                 emit('logout_redirect', room=request.sid)
