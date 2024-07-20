@@ -327,16 +327,16 @@ function loadAccepetdFriends() {
  */
 function OnRequestSend() {
 
-    // Get field data for email.
-    const email = document.getElementById("email").value;
-    const subject = document.getElementById('subject').value;
-    const body = document.getElementById('body').value;
+    // // Get field data for email.
+    // const email = document.getElementById("email").value;
+    // const subject = document.getElementById('subject').value;
+    // const body = document.getElementById('body').value;
 
-    // Create mailto link
-    const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+    // // Create mailto link
+    // const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
 
-    // Open mailto link
-    window.location.href = mailtoLink;
+    // // Open mailto link
+    // window.location.href = mailtoLink;
 
     document.getElementById('email_request_form').innerHTML = '';
     document.getElementById('email_reply_form').innerHTML = '';
