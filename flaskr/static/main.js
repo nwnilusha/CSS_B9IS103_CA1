@@ -9,9 +9,14 @@ let privateKey, publicKey;
  * 3. con_recv
  * 4. available
  */
-var clientKeys = {};
+var clientKeys = JSON.parse(localStorage.getItem('clientKeys')) || {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
+
+// Function to save clientKeys to localStorage
+function saveClientKeys() {
+    localStorage.setItem('clientKeys', JSON.stringify(clientKeys));
+}
 
 
 // Function to handle form events
@@ -51,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('email_send_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv"
+            saveClientKeys();
             loadConReceiveFriends();
             loadAvailableFriends();
         } catch (error) {
@@ -62,6 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('email_reply_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_reply_recv";
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
         } catch (error) {
@@ -122,6 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("-------end-------");
         }
         console.log('All users available ------ > ', clientKeys)
+        saveClientKeys();
         loadAvailableFriends();
     });
 
@@ -132,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
             loadAccepetdFriends();
@@ -273,6 +282,7 @@ function OnAddParsePhaseClick(friendObj) {
     clientKeys[friendObj.username].publicKey = parsePhase;
     document.getElementById('email_request_form').innerHTML = '';
     document.getElementById('email_reply_form').innerHTML = '';
+    saveClientKeys();
     loadConReceiveFriends();
     loadAccepetdFriends();
 }
@@ -348,7 +358,8 @@ function OnRequestSend() {
 function loadRequest(obj) {
     console.log('Load request-------->', obj)
 
-    clientKeys[obj.username].status = "con_sent"
+    clientKeys[obj.username].status = "con_sent";
+    saveClientKeys();
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
     loadAvailableFriends();
     const formContent = `
@@ -390,6 +401,7 @@ function loadReply(obj) {
         </div>
         `;
         clientKeys[obj.username].status = "accepted"
+        saveClientKeys();
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
         loadAccepetdFriends();
@@ -405,6 +417,7 @@ function loadReply(obj) {
         `;
         if (clientKeys[obj.username].status == "con_reply_recv") {
             clientKeys[obj.username].status = "accepted";
+            saveClientKeys();
         }
     }
 
