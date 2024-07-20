@@ -301,26 +301,19 @@ def create_app():
         except Exception as ex:
             print(f"An error occurred: {ex}")
 
-    # @socketio.on('new_message')
-    # def handle_new_message(message):
-    #     print(f"New Message : {message}")
-    #     username = None
-    #     for user in clients:
-    #         if user == request.sid:
-    #             username = clients[request.sid]
-    #     emit("chat", {"message": message, "username": username}, broadcast=True)
 
     @socketio.on('logout')
     def handle_logout(data):
         try:
             print(f"Logout Data : {data}")
-            if request.sid in allClients:
-                user = allClients[request.sid]
+            if request.sid in clients:
+                user = clients[request.sid]
                 print(f"logout user data : {user}")
-                del clients[user]
-                del broadcastKeys[user]
-                del allClients[request.sid]
-                emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+                del clientsSID[user]
+                del allClients[user]
+                del clients[request.sid]
+
+                emit("logoutUsers", {"logoutUser": user}, broadcast=True)
 
                 print("User logging out !!!!")
                 emit('logout_redirect', room=request.sid)
