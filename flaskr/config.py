@@ -4,12 +4,6 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 
 class Config:
     #SECRET_KEY = os.getenv('SECRET_KEY')
@@ -27,4 +21,12 @@ class Config:
     MYSQL_DB = "GOBUZZ"
     GOOGLE_CLIENT_ID = '484213283363-0lr7vmgdk81h02f8e9p8pgalq1n9ov6v.apps.googleusercontent.com'
     GOOGLE_CLIENT_SECRET = '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'
+
+    # SMTP Configuration for Gmail
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = 'nashl449@gmail.com'
+    MAIL_PASSWORD = 'jhmo kefg bkqa syee'
+    MAIL_DEFAULT_SENDER = 'nashl449@gmail.com'
 
