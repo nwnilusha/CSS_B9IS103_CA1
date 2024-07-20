@@ -7,10 +7,10 @@ from authlib.integrations.flask_client import OAuth
 import mysql.connector
 import re
 from flask_socketio import SocketIO, emit
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from flask_mail import Mail, Message
 from flaskr.config import Config
 from flaskr.db import Database
-
-from flask_mail import Mail, Message
 
 clients = {}
 clientsSID = {}
@@ -27,6 +27,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     mail = Mail(app)
+    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
     #app.config['MYSQL_HOST'] = 'localhost'
     #app.config['MYSQL_USER'] = 'root'
@@ -73,6 +74,14 @@ def create_app():
 
     socketio.init_app(app) 
     bcrypt = Bcrypt(app)
+
+    def send_verification_email(email):
+        token = s.dumps(email, salt='email-confirm')
+        verification_url = url_for('verify_email', token=token, _external=True)
+        msg = Message('Email Verification', recipients=[email])
+        msg.body = f'Please verify your email by clicking the following link: {verification_url}'
+        mail.send(msg)
+        flash('A verification email has been sent to your email address. Please check your inbox.', 'info')
 
     # Application's main page
     @app.route("/index")
@@ -181,15 +190,13 @@ def create_app():
             # Hash the password before saving to database
             hashed_password = generate_password_hash(password)
 
-            # Check if username already exists in database
+            # Check if username or email already exists in database
             select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
             db = None
             try:
                 db = g.get('db')
-
-                if db is not None :
+                if db is not None:
                     result = db.fetch_query(select_query, (username, email))
-
                     if result:
                         msg = 'Username or Email already exists. Please choose a different username or email.'
                     else:
@@ -197,14 +204,13 @@ def create_app():
                         result = db.execute_vquery(insert_query, username, email, hashed_password)
                         print(f"result : {result}")
                         if result >= 0:
-                            return redirect(url_for('login'))
+                            send_verification_email(email)
+                            return redirect(url_for('verify_notice'))
                         else:
                             msg = 'User registration failure: DB error'
-
                 else:
                     print("DB connection is not created. Please check the connection string.")
                     msg = "Database connectivity Error, Check the connection string"
-
             except Exception as ex:
                 print(f"Exception occurred: {ex}")
                 msg = f"User registration failure: Exception occurred: {ex}"
@@ -214,6 +220,28 @@ def create_app():
                 return render_template('signup.html', msg=msg)
         return render_template('signup.html')
 
+    @app.route('/verify_notice')
+    def verify_notice():
+        return render_template('verify_notice.html')
+
+    @app.route('/verify_email/<token>')
+    def verify_email(token):
+        try:
+            email = s.loads(token, salt='email-confirm', max_age=3600)
+            select_query = "SELECT * FROM USER WHERE email = %s"
+            db = g.get('db')
+            result = db.fetch_query(select_query, (email,))
+            if result:
+                user_data = result[0]
+                session['loggedin'] = True
+                session['username'] = user_data['username']
+                session['email'] = user_data['email']
+                return redirect(url_for('index'))
+            else:
+                return render_template('verify_email.html', message='Verification failed. User not found.')
+        except SignatureExpired:
+            return render_template('verify_email.html', message='The verification link has expired.')
+    
     @socketio.on('connect')
     def handle_connect():
         print('Client Connected')
@@ -331,6 +359,22 @@ def create_app():
         session.pop('profile', None) 
         session.pop('google_oauth_state', None)
         return redirect(url_for('login'))
+    
+    # Typing Indicator in the server side
+    @socketio.on('typing')
+    def handle_typing(data):
+        recipient = data['recipient']
+        if recipient in clients:
+            recipient_sid = clients[recipient]
+            emit('typing', {'sender': allClients[request.sid]}, room=recipient_sid)
+
+    @socketio.on('stop_typing')
+    def handle_stop_typing(data):
+        recipient = data['recipient']
+        if recipient in clients:
+            recipient_sid = clients[recipient]
+            emit('stop_typing', {'sender': allClients[request.sid]}, room=recipient_sid)
+
 
     # comminting following method, refer to the method defined earlier.
     #@app.teardown_appcontext
