@@ -71,12 +71,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     socket.on('message', async (data) => {
         try {
+
+            if (chatClient != data["sender"]){
+                let ul = document.getElementById("chat-msg");
+                let li = document.createElement("li");
+                li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
+                li.classList.add("center_user");
+                ul.appendChild(li);
+                ul.scrollTop = ul.scrollHeight;
+
+                chatClient = data["sender"]
+                chatClientPK = clientKeys[data["sender"]].publicKey
+            }
+
             isCurrentUser = false;
+            
             console.log("Sender------------", data["sender"]);
             console.log("Sender Encrypted Message------------", data["message"]);
 
             const decryptedMessage = await decryptMessage(privateKey, data["message"]);
             console.log("Sender Decrypted Message------------", decryptedMessage);
+
 
             let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
@@ -183,6 +198,7 @@ function loadAvailableFriends() {
         console.log("user==" + user['username']);
         console.log("user==" + user['email']);
         console.log("user==" + user['status']);
+
         let li = document.createElement("li");
 
         console.log("user['status'] available=====" + user['status']);
@@ -192,7 +208,7 @@ function loadAvailableFriends() {
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" value="Invitation Sent" disabled></div>
+                    <div class="action"><input type="button" style="background-color:rgb(196, 128, 32);" value="Invitation Sent" disabled></div>
                 `;
         }
         else if (user['status'] == 'available') {
@@ -238,7 +254,7 @@ function loadConReceiveFriends() {
                     <div class="status-indicator"></div>
                     <div class="username">${key}</div>
                     <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="add_friend" value="Send Confirmation" onclick='loadReply(${JSON.stringify(user)})'></div>
+                    <div class="action"><input type="button" name="add_friend" value="Send Confirmation" style="background-color:rgb(196, 128, 32);" onclick='loadReply(${JSON.stringify(user)})'></div>
                 `;
         }
 
@@ -255,6 +271,8 @@ function OnAddParsePhaseClick(friendObj) {
     var parsePhase = document.getElementById("body_parsephase").value;
     console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
     clientKeys[friendObj.username].publicKey = parsePhase;
+    document.getElementById('email_request_form').innerHTML = '';
+    document.getElementById('email_reply_form').innerHTML = '';
     loadConReceiveFriends();
     loadAccepetdFriends();
 }
@@ -319,6 +337,9 @@ function OnRequestSend() {
 
     // Open mailto link
     window.location.href = mailtoLink;
+
+    document.getElementById('email_request_form').innerHTML = '';
+    document.getElementById('email_reply_form').innerHTML = '';
 }
 
 /**

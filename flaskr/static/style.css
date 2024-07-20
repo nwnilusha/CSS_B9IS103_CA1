@@ -144,6 +144,11 @@ body {
     color: #333;
 }
 
+.friends-list-container .username_select {
+    font-size: 16px;
+    color: #2321b7;
+}
+
 .friends-list-container input[type=submit] {
     width: 100%;
     background-color: #4CAF50;
