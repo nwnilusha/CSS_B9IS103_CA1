@@ -9,10 +9,14 @@ let privateKey, publicKey;
  * 3. con_recv
  * 4. available
  */
-var clientKeys = {};
+var clientKeys = JSON.parse(localStorage.getItem('clientKeys')) || {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
+// Function to save clientKeys to localStorage
+function saveClientKeys() {
+    localStorage.setItem('clientKeys', JSON.stringify(clientKeys));
+}
 
 // Function to handle form events
 document.addEventListener('DOMContentLoaded', function () {
@@ -51,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('email_send_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv"
+            saveClientKeys();
             loadConReceiveFriends();
             loadAvailableFriends();
         } catch (error) {
@@ -62,6 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('email_reply_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_reply_recv";
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
         } catch (error) {
@@ -107,6 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("-------end-------");
         }
         console.log('All users available ------ > ', clientKeys)
+        saveClientKeys();
         loadAvailableFriends();
     });
 
@@ -117,6 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
             loadAccepetdFriends();
@@ -255,6 +263,7 @@ function OnAddParsePhaseClick(friendObj) {
     var parsePhase = document.getElementById("body_parsephase").value;
     console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
     clientKeys[friendObj.username].publicKey = parsePhase;
+    saveClientKeys();
     loadConReceiveFriends();
     loadAccepetdFriends();
 }
@@ -327,7 +336,8 @@ function OnRequestSend() {
 function loadRequest(obj) {
     console.log('Load request-------->', obj)
 
-    clientKeys[obj.username].status = "con_sent"
+    clientKeys[obj.username].status = "con_sent";
+    saveClientKeys();
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
     loadAvailableFriends();
     const formContent = `
@@ -354,7 +364,6 @@ function loadReply(obj) {
 
     formContent = NaN;
 
-
     if (clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "") {
         console.log("TEST----1");
         formContent = `
@@ -368,12 +377,12 @@ function loadReply(obj) {
             <button type="button" onclick="OnRequestSend()">Request To Connect</button>
         </div>
         `;
-        clientKeys[obj.username].status = "accepted"
+        clientKeys[obj.username].status = "accepted";
+        saveClientKeys();
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
         loadAccepetdFriends();
-    }
-    else {
+    } else {
         //<div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
         formContent = `
         <div class="email-form-container">
@@ -384,6 +393,7 @@ function loadReply(obj) {
         `;
         if (clientKeys[obj.username].status == "con_reply_recv") {
             clientKeys[obj.username].status = "accepted";
+            saveClientKeys();
         }
     }
 
@@ -391,7 +401,6 @@ function loadReply(obj) {
     //document.getElementById('div_connect_request').innerHTML = formContent;
     document.getElementById('email_reply_form').innerHTML = formContent;
 }
-
 
 async function sendMessage() {
     const clientMessage = document.getElementById('message-input').value;
