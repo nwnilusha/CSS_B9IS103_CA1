@@ -317,11 +317,7 @@ function loadAccepetdFriends() {
  * Button click function for sending connection request via an email
  * this will open the email client for sending the email.
  */
-function OnRequestSend(obj) {
-
-    clientKeys[obj.username].status = "con_sent"
-    socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
-    loadAvailableFriends();
+function OnRequestSend() {
 
     // Get field data for email.
     const email = document.getElementById("email").value;
