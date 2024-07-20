@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 });
 
+
 async function initiateUser() {
     try {
         username = userData.Username;
@@ -278,11 +279,6 @@ function loadAccepetdFriends() {
     let highlightedLi = null;
     let li = document.createElement("li");
 
-    for (const [key,user] of Object.entries(clientKeys)) {
-        console.log("user=="+user['username']);
-        console.log("user=="+user['email']);
-        console.log("user=="+user['status']);
-
     friendsList = document.getElementById("connections-list");
     friendsList.innerHTML = "";
 
@@ -340,29 +336,6 @@ function OnRequestSend(obj) {
 }
 
 /**
- * Button click function for sending connection request via an email
- * this will open the email client for sending the email.
- */
-function OnReplySend(obj) {
-    
-    clientKeys[obj.username].status = "accepted"
-    socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-    loadConReceiveFriends();
-    loadAccepetdFriends();
-
-    // Get field data for email.
-    const email = document.getElementById("email").value;
-    const subject = document.getElementById('subject').value;
-    const body = document.getElementById('body').value;
-
-    // Create mailto link
-    const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-
-    // Open mailto link
-    window.location.href = mailtoLink;
-}
-
-/**
  * Function to load the email request
  */
 function loadRequest(obj) {
@@ -379,7 +352,7 @@ function loadRequest(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)})'>Request To Connect</button>
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
         </div>
     `;
     // load to the div_connect_request
@@ -407,7 +380,7 @@ function loadReply(obj) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick='OnReplySend(${JSON.stringify(obj)})'>Request To Connect</button>
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
         </div>
         `;
         clientKeys[obj.username].status = "accepted"
