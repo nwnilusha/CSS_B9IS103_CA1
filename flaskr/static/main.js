@@ -167,6 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('logout-btn').onclick = () => {
         socket.emit('logout', { user_name: username });
+        localStorage.clear(); // Clear all local storage data
     };
 
 
@@ -598,6 +599,7 @@ function logout() {
         credentials: 'same-origin'
     }).then(response => {
         if (response.ok) {
+            localStorage.clear(); // Clear all local storage data
             window.location.href = '/';
         } else {
             console.error("Logout failed");
