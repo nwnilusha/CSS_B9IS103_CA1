@@ -1,11 +1,8 @@
 body {
-    font-family: Arial, sans-serif;
-    /*display: flex;*/
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg, #72EDF2 10%, #5151E5 100%);
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f4f9;
     margin: 0;
+    padding: 0;
 }
 
 .centered {
@@ -52,52 +49,58 @@ body {
 }
 
 .chat-container {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    background-color: #fff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
 }
 
 .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    background: linear-gradient(135deg, #007bff 10%, #0056b3 100%);
+    padding: 10px 20px;
+    background: #007bff;
     color: #fff;
-    border-radius: 10px 10px 0 0;
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 0px;
+    border-radius: 8px 8px 0 0;
+}
+
+.chat-header h3 {
+    margin: 0;
 }
 
 .chat-header button {
-    padding: 10px 15px;
+    background: #ff4d4d;
     border: none;
-    border-radius: 5px;
-    background-color: #ff4d4d;
+    padding: 10px 20px;
     color: #fff;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
 }
 
 .chat-header button:hover {
     background-color: #ff1a1a;
 }
 
-.chat-content {
+.flex-container {
     display: flex;
-    flex: 1;
+    justify-content: space-between;
+    align-items: stretch;
 }
 
-.friends-list-container {
-    width: 270px; 
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-right: 1px solid #ccc;
+.friends-list-container, .chat-content {
+    flex: 1;
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.friends-list-container ul, .chat-content ul {
+    list-style: none;
+    padding: 0;
+    flex: 1;
     overflow-y: auto;
 }
 
@@ -105,12 +108,6 @@ body {
     margin: 0 0 10px 0;
     font-size: 22px;
     color: #333;
-}
-
-.friends-list-container ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
 }
 
 .friends-list-container ul li {
@@ -253,28 +250,27 @@ body {
 
 .chat-input {
     display: flex;
-    padding: 20px;
-    border-top: 1px solid #ccc;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-top: 1px solid #ddd;
 }
 
 .chat-input input {
     flex: 1;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin-right: 10px;
-    font-size: 18px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 .chat-input button {
-    padding: 15px 20px;
+    background: #007bff;
     border: none;
-    border-radius: 5px;
-    background-color: #007bff;
+    padding: 10px 20px;
     color: #fff;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 18px;
-    transition: background-color 0.3s ease;
+    margin-left: 10px;
 }
 
 .chat-input button:hover {
@@ -362,14 +358,11 @@ body {
 }
 
 /* Tab links styling */
-.tabs {
-    list-style-type: none;
-    padding: 0;
+.tab {
     display: flex;
     justify-content: space-around;
-    background-color: #007bff;
-    border-radius: 5px;
-    margin-bottom: 20px;
+    background: #007bff;
+    border-radius: 0 0 8px 8px;
 }
 
 .tabs li {
@@ -406,13 +399,11 @@ body {
 }
 
 
-.chat-content {
+.friends-list-container, .chat-content {
+    flex: 1;
+    margin: 10px;
     display: flex;
-    justify-content: space-between;
-}
-
-.friends-list-container {
-    width: 30%;
+    flex-direction: column;
 }
 
 .chat-messages {
@@ -458,17 +449,16 @@ body {
 }
 
 .tab button {
-    background-color: inherit;
+    background: none;
     border: none;
-    outline: none;
+    padding: 14px 20px;
+    color: black;
     cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-    font-size: 17px;
+    transition: background 0.3s;
 }
 
-.tab button:hover {
-    background-color: #ddd;
+.tab button.active {
+    background: #0056b3;
 }
 
 .tab button.active {
@@ -478,8 +468,7 @@ body {
 /* Style the tab content */
 .tabcontent {
     display: none;
-    /*padding: 6px 12px;*/
-    padding: 0 0 0 0;
+    padding: 20px;
     border-top: none;
 }
 
@@ -488,9 +477,8 @@ body {
 }
 
 .flex-container {
-  display: flex;
-  width: 100%;
-  background-color: skyblue;
+    display: flex;
+    justify-content: space-between;
 }
 
 .flex-container > div {
@@ -498,4 +486,5 @@ body {
   margin: 5px;
   padding: 20px;
   font-size: 20px;
+  width: 650px;
 }
