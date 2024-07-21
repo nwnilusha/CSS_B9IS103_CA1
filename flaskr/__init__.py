@@ -188,7 +188,7 @@ def create_app():
                 return render_template('signup.html', msg=msg)
 
             # Hash the password before saving to database
-            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+            hashed_password = generate_password_hash(password)
 
             # Check if username or email already exists in database
             select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
@@ -363,17 +363,26 @@ def create_app():
     # Typing Indicator in the server side
     @socketio.on('typing')
     def handle_typing(data):
-        recipient = data['recipient']
-        if recipient in clients:
-            recipient_sid = clients[recipient]
-            emit('typing', {'sender': allClients[request.sid]}, room=recipient_sid)
+        try:
+            #print(f"Typing event from {data['sender']} to {data['recipient']}")
+            recipient = data['recipient']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
 
     @socketio.on('stop_typing')
     def handle_stop_typing(data):
-        recipient = data['recipient']
-        if recipient in clients:
-            recipient_sid = clients[recipient]
-            emit('stop_typing', {'sender': allClients[request.sid]}, room=recipient_sid)
+        try:
+            #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
+            recipient = data['recipient']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
 
 
     # comminting following method, refer to the method defined earlier.

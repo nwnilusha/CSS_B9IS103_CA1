@@ -205,12 +205,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('send').onclick = async () => {
         await sendMessage();
+        socket.emit('stop_typing', { sender: username, recipient: chatClient });
     };
 
-    document.getElementById("message-input").addEventListener("keypress", async function (event) {
+    document.getElementById("message-input").addEventListener("keypress", function () {
+        console.log("Keypress detected, sending typing event");
+        socket.emit('typing', { sender: username, recipient: chatClient });
+    });
+
+    document.getElementById("message-input").addEventListener("keyup", function (event) {
         if (event.key === "Enter") {
-            await sendMessage();
+            console.log("Enter key pressed, sending stop typing event");
+            socket.emit('stop_typing', { sender: username, recipient: chatClient });
         }
+    });
+
+    document.getElementById("message-input").addEventListener("blur", function () {
+        console.log("Input lost focus, sending stop typing event");
+        socket.emit('stop_typing', { sender: username, recipient: chatClient });
     });
 
     document.getElementById('logout-btn').onclick = () => {
@@ -218,7 +230,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.clear(); // Clear all local storage data
     };
 
+    socket.on('typing', function (data) {
+        console.log("Received typing event from", data.sender);
+        const typingIndicator = document.getElementById("typing-indicator");
+        typingIndicator.textContent = data.sender + " is typing...";
+    });
 
+    socket.on('stop_typing', function (data) {
+        console.log("Received stop typing event from", data.sender);
+        const typingIndicator = document.getElementById("typing-indicator");
+        typingIndicator.textContent = "";
+    });
 });
 
 
@@ -454,7 +476,7 @@ function loadReply(obj, publicKey) {
         formContent = `
         <div class="email-form-container">
             <label for="body_parsephase">ParsePhase:</label>
-            <textarea id="body_parsephase" name="body" placeholder="Enter the ParsePhase received via the email. Please check email and enter the ParsePhase" required></textarea>
+            <textarea id="body_parsephase" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>
             <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
         </div>
         `;
