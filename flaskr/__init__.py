@@ -188,7 +188,7 @@ def create_app():
                 return render_template('signup.html', msg=msg)
 
             # Hash the password before saving to database
-            hashed_password = generate_password_hash(password)
+            hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
             # Check if username or email already exists in database
             select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
