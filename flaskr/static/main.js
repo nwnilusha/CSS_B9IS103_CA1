@@ -9,10 +9,52 @@ let privateKey, publicKey;
  * 3. con_recv
  * 4. available
  */
-var clientKeys = {};
+var clientKeys = JSON.parse(localStorage.getItem('clientKeys')) || {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
+// Function to save clientKeys to localStorage
+function saveClientKeys() {
+    localStorage.setItem('clientKeys', JSON.stringify(clientKeys));
+}
+
+// Function to save publicKey to localStorage
+function savePublicKey() {
+    localStorage.setItem('publicKey', publicKey);
+}
+
+// Function to load publicKey from localStorage
+function loadPublicKey() {
+    publicKey = localStorage.getItem('publicKey');
+}
+
+// Function to save privateKey to localStorage
+async function savePrivateKey() {
+    const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", privateKey);
+    const privateKeyBase64 = arrayBufferToBase64(exportedPrivateKey);
+    localStorage.setItem('privateKey', privateKeyBase64);
+}
+
+// Function to load privateKey from localStorage
+async function loadPrivateKey() {
+    const privateKeyBase64 = localStorage.getItem('privateKey');
+    if (privateKeyBase64) {
+        const privateKeyArrayBuffer = base64ToArrayBuffer(privateKeyBase64);
+        privateKey = await window.crypto.subtle.importKey(
+            "pkcs8",
+            privateKeyArrayBuffer,
+            {
+                name: "RSA-OAEP",
+                hash: "SHA-256"
+            },
+            true,
+            ["decrypt"]
+        );
+        console.log("Private key successfully loaded.");
+    } else {
+        console.error("No private key found in localStorage.");
+    }
+}
 
 // Function to handle form events
 document.addEventListener('DOMContentLoaded', function () {
@@ -48,9 +90,21 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-" + userData.Username;
 
+    // Load privateKey and publicKey from localStorage
+    await loadPrivateKey();
+    loadPublicKey();
+
+    // Re-establish connection using data from localStorage
+    if (Object.keys(clientKeys).length > 0) {
+        loadAvailableFriends();
+        loadConReceiveFriends();
+        loadAccepetdFriends();
+    }
+
     socket.on('email_send_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv"
+            saveClientKeys();
             loadConReceiveFriends();
             loadAvailableFriends();
         } catch (error) {
@@ -62,6 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('email_reply_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_reply_recv";
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
         } catch (error) {
@@ -100,7 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ul.appendChild(li);
             ul.scrollTop = ul.scrollHeight;
         } catch (error) {
-            console.error("Error message error:", error);
+            console.error("Error during decryption:", error);
         }
     });
 
@@ -122,6 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("-------end-------");
         }
         console.log('All users available ------ > ', clientKeys)
+        saveClientKeys();
         loadAvailableFriends();
     });
 
@@ -132,6 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
             loadAccepetdFriends();
@@ -158,6 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('logout-btn').onclick = () => {
         socket.emit('logout', { user_name: username });
+        localStorage.clear(); // Clear all local storage data
     };
 
 
@@ -167,7 +225,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initiateUser() {
     try {
         username = userData.Username;
-        publicKey = await generateRSAKeyPair();
+
+        // Check if private key exists in localStorage
+        const privateKeyBase64 = localStorage.getItem('privateKey');
+        if (privateKeyBase64) {
+            await loadPrivateKey();
+            console.log("Using existing private key.");
+        } else {
+            publicKey = await generateRSAKeyPair();
+            console.log("Generated new key pair.");
+        }
+
+        // Load publicKey from localStorage
+        loadPublicKey();
 
         socket.connect();
         console.log('Username------->', userData.Username)
@@ -189,9 +259,7 @@ async function initiateUser() {
  * Function to load the chat list
  */
 function loadAvailableFriends() {
-    var friendsList = NaN;
-
-    friendsList = document.getElementById("friends-list");
+    var friendsList = document.getElementById("friends-list");
     friendsList.innerHTML = "";
 
     for (const [key, user] of Object.entries(clientKeys)) {
@@ -205,19 +273,18 @@ function loadAvailableFriends() {
 
         if (user['status'] == 'con_sent') {
             li.innerHTML = `
-                    <div class="status-indicator"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" style="background-color:rgb(196, 128, 32);" value="Invitation Sent" disabled></div>
-                `;
-        }
-        else if (user['status'] == 'available') {
+                <div class="status-indicator"></div>
+                <div class="username">${key}</div>
+                <div class="last-active" id="last-active-${key}"></div>
+                <div class="action"><input type="button" style="background-color:rgb(196, 128, 32);" value="Invitation Sent" disabled></div>
+            `;
+        } else if (user['status'] == 'available') {
             li.innerHTML = `
-                    <div class="status-indicator"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
-                `;
+                <div class="status-indicator"></div>
+                <div class="username">${key}</div>
+                <div class="last-active" id="last-active-${key}"></div>
+                <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)}, "${publicKey}")'></div>
+            `;
         }
 
         friendsList.appendChild(li);
@@ -228,9 +295,7 @@ function loadAvailableFriends() {
  * Function to load the chat list
  */
 function loadConReceiveFriends() {
-    var friendsList = NaN;
-
-    friendsList = document.getElementById("received-list");
+    var friendsList = document.getElementById("received-list");
     friendsList.innerHTML = "";
 
     for (const [key, user] of Object.entries(clientKeys)) {
@@ -243,19 +308,18 @@ function loadConReceiveFriends() {
         console.log("user['status'] loadConReceiveFriends=====" + user['status']);
         if ((user['status'] == 'con_recv' || user['status'] == 'con_reply_recv') && user['publicKey'] == "") {
             li.innerHTML = `
-                    <div class="status-indicator"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)})'></div>
-                `;
-        }
-        else if (user['status'] == 'con_recv' && user['publicKey'] != "") {
+                <div class="status-indicator"></div>
+                <div class="username">${key}</div>
+                <div class="last-active" id="last-active-${key}"></div>
+                <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)}, "${publicKey}")'></div>
+            `;
+        } else if (user['status'] == 'con_recv' && user['publicKey'] != "") {
             li.innerHTML = `
-                    <div class="status-indicator"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                    <div class="action"><input type="button" name="add_friend" value="Send Confirmation" style="background-color:rgb(196, 128, 32);" onclick='loadReply(${JSON.stringify(user)})'></div>
-                `;
+                <div class="status-indicator"></div>
+                <div class="username">${key}</div>
+                <div class="last-active" id="last-active-${key}"></div>
+                <div class="action"><input type="button" name="add_friend" value="Send Confirmation" style="background-color:rgb(196, 128, 32);" onclick='loadReply(${JSON.stringify(user)}, "${publicKey}")'></div>
+            `;
         }
 
         friendsList.appendChild(li);
@@ -273,6 +337,7 @@ function OnAddParsePhaseClick(friendObj) {
     clientKeys[friendObj.username].publicKey = parsePhase;
     document.getElementById('email_request_form').innerHTML = '';
     document.getElementById('email_reply_form').innerHTML = '';
+    saveClientKeys();
     loadConReceiveFriends();
     loadAccepetdFriends();
 }
@@ -282,11 +347,7 @@ function OnAddParsePhaseClick(friendObj) {
  * Function to load the chat list
  */
 function loadAccepetdFriends() {
-    var friendsList = NaN;
-
-    let highlightedLi = null;
-
-    friendsList = document.getElementById("connections-list");
+    var friendsList = document.getElementById("connections-list");
     friendsList.innerHTML = "";
 
     for (const [key, user] of Object.entries(clientKeys)) {
@@ -299,10 +360,10 @@ function loadAccepetdFriends() {
         console.log("user['status'] loadAccepetdFriends=====" + user['status']);
         if (user['status'] == 'accepted') {
             li.innerHTML = `
-                    <div class="status-indicator"></div>
-                    <div class="username">${key}</div>
-                    <div class="last-active" id="last-active-${key}"></div>
-                `;
+                <div class="status-indicator"></div>
+                <div class="username">${key}</div>
+                <div class="last-active" id="last-active-${key}"></div>
+            `;
 
             li.addEventListener("click", () => {
                 chatClient = key;
@@ -345,10 +406,9 @@ function OnRequestSend() {
 /**
  * Function to load the email request
  */
-function loadRequest(obj) {
-    console.log('Load request-------->', obj)
-
-    clientKeys[obj.username].status = "con_sent"
+function loadRequest(obj, publicKey) {
+    clientKeys[obj.username].status = "con_sent";
+    saveClientKeys();
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
     loadAvailableFriends();
     const formContent = `
@@ -370,14 +430,10 @@ function loadRequest(obj) {
 /**
  * Function to load the email request
  */
-function loadReply(obj) {
-    console.log('Load request-------->', obj)
-
-    formContent = NaN;
-
+function loadReply(obj, publicKey) {
+    let formContent;
 
     if (clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "") {
-        console.log("TEST----1");
         formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
@@ -390,12 +446,11 @@ function loadReply(obj) {
         </div>
         `;
         clientKeys[obj.username].status = "accepted"
+        saveClientKeys();
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
         loadAccepetdFriends();
-    }
-    else {
-        //<div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
+    } else {
         formContent = `
         <div class="email-form-container">
             <label for="body_parsephase">ParsePhase:</label>
@@ -405,14 +460,12 @@ function loadReply(obj) {
         `;
         if (clientKeys[obj.username].status == "con_reply_recv") {
             clientKeys[obj.username].status = "accepted";
+            saveClientKeys();
         }
     }
 
-    // load to the div_connect_request
-    //document.getElementById('div_connect_request').innerHTML = formContent;
     document.getElementById('email_reply_form').innerHTML = formContent;
 }
-
 
 async function sendMessage() {
     const clientMessage = document.getElementById('message-input').value;
@@ -454,6 +507,13 @@ async function generateRSAKeyPair() {
 
     console.log("Generated Public Key (Base64):", publicKeyBase64);
     privateKey = keyPair.privateKey;
+
+    // Save the private key to localStorage
+    await savePrivateKey();
+
+    // Save the public key to localStorage
+    publicKey = publicKeyBase64;
+    savePublicKey();
 
     return publicKeyBase64;
 }
@@ -576,7 +636,7 @@ function confirmLogout() {
         }
     };
 
-
+    
 }
 
 function logout() {
@@ -585,6 +645,7 @@ function logout() {
         credentials: 'same-origin'
     }).then(response => {
         if (response.ok) {
+            localStorage.clear(); // Clear all local storage data
             window.location.href = '/';
         } else {
             console.error("Logout failed");
