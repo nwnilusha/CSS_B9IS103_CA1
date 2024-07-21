@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <style type="text/css">
-        /* Style the tab */
-
-
+        .typing-indicator {
+            font-style: italic;
+            color: grey;
+            padding: 5px;
+            height: 20px;
+        }
     </style>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -35,7 +38,7 @@
                     </ul>
                 </div>
                 <div id="div_connect_request">
-                    <p>&nbsp;&nbsp;&nbsp;GOBUZZ : Send connction request to join for the chat.&nbsp;&nbsp;&nbsp;</p>
+                    <p>&nbsp;&nbsp;&nbsp;GOBUZZ : Send connection request to join for the chat.&nbsp;&nbsp;&nbsp;</p>
                     <form method="POST" id="email_request_form" action=""></form>
                 </div>                    
             </div>                
@@ -69,6 +72,7 @@
                                         <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
                                         <button id="send">Send</button>
                                     </div>
+                                    <div class="typing-indicator" id="typing-indicator"></div>
                                 </div>
                             </div>
                         </div>
@@ -79,8 +83,8 @@
     </div>
     <script>
         var userData = {{ userData | tojson }};
-        console.log('User data username -------',userData.Username);
-        console.log('User data email -------',userData.Email);
+        console.log('User data username -------', userData.Username);
+        console.log('User data email -------', userData.Email);
 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
@@ -103,4 +107,3 @@
     </script>
 </body>
 </html>
-
