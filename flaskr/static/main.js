@@ -654,3 +654,5 @@ function logout() {
         console.error("Logout error:", error);
     });
 }
+
+console.log()
