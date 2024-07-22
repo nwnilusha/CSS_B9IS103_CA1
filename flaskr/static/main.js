@@ -32,13 +32,15 @@ function loadPublicKey() {
 async function savePrivateKey() {
     const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", privateKey);
     const privateKeyBase64 = arrayBufferToBase64(exportedPrivateKey);
-    localStorage.setItem('privateKey', privateKeyBase64);
+    const encryptedPrivateKey = await encryptPrivateKey(privateKeyBase64, 'your-password'); // Encrypt with a password
+    localStorage.setItem('privateKey', encryptedPrivateKey);
 }
 
 // Function to load privateKey from localStorage
 async function loadPrivateKey() {
-    const privateKeyBase64 = localStorage.getItem('privateKey');
-    if (privateKeyBase64) {
+    const encryptedPrivateKey = localStorage.getItem('privateKey');
+    if (encryptedPrivateKey) {
+        const privateKeyBase64 = await decryptPrivateKey(encryptedPrivateKey, 'your-password'); // Decrypt with a password
         const privateKeyArrayBuffer = base64ToArrayBuffer(privateKeyBase64);
         privateKey = await window.crypto.subtle.importKey(
             "pkcs8",
@@ -56,18 +58,65 @@ async function loadPrivateKey() {
     }
 }
 
-function createGroup(groupName) {
-    socket.emit('create_group', { group_name: groupName });
+// Function to encrypt the private key
+async function encryptPrivateKey(privateKeyBase64, password) {
+    const passwordKey = await getPasswordKey(password);
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encryptedContent = await window.crypto.subtle.encrypt(
+        {
+            name: "AES-GCM",
+            iv: iv
+        },
+        passwordKey,
+        new TextEncoder().encode(privateKeyBase64)
+    );
+    const encryptedContentArr = new Uint8Array(encryptedContent);
+    const buff = new Uint8Array(iv.byteLength + encryptedContentArr.byteLength);
+    buff.set(iv, 0);
+    buff.set(encryptedContentArr, iv.byteLength);
+    return arrayBufferToBase64(buff);
 }
 
-function joinGroup(groupName) {
-    socket.emit('join_group', { group_name: groupName, username: userData.Username });
+// Function to decrypt the private key
+async function decryptPrivateKey(encryptedPrivateKeyBase64, password) {
+    const encryptedPrivateKeyBuff = base64ToArrayBuffer(encryptedPrivateKeyBase64);
+    const iv = encryptedPrivateKeyBuff.slice(0, 12);
+    const data = encryptedPrivateKeyBuff.slice(12);
+    const passwordKey = await getPasswordKey(password);
+    const decryptedContent = await window.crypto.subtle.decrypt(
+        {
+            name: "AES-GCM",
+            iv: iv
+        },
+        passwordKey,
+        data
+    );
+    return new TextDecoder().decode(decryptedContent);
 }
 
-function leaveGroup(groupName) {
-    socket.emit('leave_group', { group_name: groupName, username: userData.Username });
+// Function to get a key from a password
+async function getPasswordKey(password) {
+    const enc = new TextEncoder();
+    const keyMaterial = await window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(password),
+        { name: "PBKDF2" },
+        false,
+        ["deriveKey"]
+    );
+    return window.crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt: enc.encode("salt"), // Use a proper salt in production
+            iterations: 100000,
+            hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+    );
 }
-
 
 // Function to handle form events
 document.addEventListener('DOMContentLoaded', function () {
