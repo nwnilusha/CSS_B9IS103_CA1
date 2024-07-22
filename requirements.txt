@@ -1,3 +1,4 @@
+python==3.10.12
 absl-py==2.1.0
 ansible==9.3.0
 ansible-base==2.10.8
@@ -34,4 +35,4 @@ Babel==2.8.0
 bcrypt==3.2.0
 blinker==1.7.0
 eventlet==0.31.0
-authlib==1.0.0
+authlib==1.3.1
