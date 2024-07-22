@@ -480,7 +480,7 @@ function loadReply(obj, publicKey) {
         formContent = `
         <div class="email-form-container">
             <label for="body_parsephase">ParsePhase:</label>
-            <textarea id="body_parsephase" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>
+            <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
             <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
         </div>
         `;
