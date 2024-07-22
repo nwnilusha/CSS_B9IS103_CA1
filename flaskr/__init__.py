@@ -99,6 +99,7 @@ def create_app():
         flash('A verification email has been sent to your email address. Please check your inbox.', 'info')
 
 
+
     # Application's main page
     @app.route("/index")
     def index():
@@ -115,7 +116,6 @@ def create_app():
         return render_template('index.html', userData=userData)
         
 
-    @app.route('/', methods=['GET', 'POST'])
     @app.route('/', methods=['GET', 'POST'])
     def login():
         msg = request.args.get('message', '')  # Get the message from the query parameters
@@ -151,6 +151,7 @@ def create_app():
             except Exception as ex:
                 msg = f"Exception occurred: {ex}"
         return render_template('login.html', msg=msg)
+
 
 
     @app.route('/google/login')
@@ -422,51 +423,6 @@ def create_app():
                 emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
-    
-    @socketio.on('create_group')
-    def handle_create_group(data):
-        group_name = data['group_name']
-        if group_name not in groups:
-            groups[group_name] = {
-                'members': set(),
-                'messages': []
-            }
-            emit('group_created', {'group_name': group_name}, broadcast=True)
-
-    @socketio.on('join_group')
-    def handle_join_group(data):
-        group_name = data['group_name']
-        username = data['username']
-        if group_name in groups:
-            join_room(group_name)
-            groups[group_name]['members'].add(username)
-            emit('joined_group', {'group_name': group_name, 'username': username}, room=group_name)
-
-    @socketio.on('leave_group')
-    def handle_leave_group(data):
-        group_name = data['group_name']
-        username = data['username']
-        if group_name in groups:
-            leave_room(group_name)
-            groups[group_name]['members'].discard(username)
-            emit('left_group', {'group_name': group_name, 'username': username}, room=group_name)
-
-    @socketio.on('group_message')
-    def handle_group_message(data):
-        group_name = data['group_name']
-        message = data['message']
-        username = data['username']
-        if group_name in groups:
-            groups[group_name]['messages'].append({
-                'username': username,
-                'message': message
-            })
-            emit('group_message', {
-                'group_name': group_name,
-                'username': username,
-                'message': message
-            }, room=group_name)
-
 
 
     # comminting following method, refer to the method defined earlier.
