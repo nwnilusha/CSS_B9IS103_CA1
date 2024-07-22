@@ -11,6 +11,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_mail import Mail, Message
 from flaskr.config import Config
 from flaskr.db import Database
+from flaskr.db import DatabaseSQLite
 
 clients = {}
 clientsSID = {}
@@ -35,18 +36,28 @@ def create_app():
     #app.config['MYSQL_DB'] = 'GOBUZZ'
 
     # create the db config
-    db_config = {
-        'user': app.config['MYSQL_USER'],
-        'password': app.config['MYSQL_PASSWORD'],
-        'host': app.config['MYSQL_HOST'],
-        'database': app.config['MYSQL_DB']
-    }
+    if app.config['DB_TYPE'] == 'MYSQL':    
+        db_config = {
+            'user': app.config['MYSQL_USER'],
+            'password': app.config['MYSQL_PASSWORD'],
+            'host': app.config['MYSQL_HOST'],
+            'database': app.config['MYSQL_DB']
+        }
+    elif app.config['DB_TYPE'] == 'SQLITE':
+        db_config = {
+            'database': app.config['SQLITE_DB'],
+            'db_type': app.config['DB_TYPE']
+        }
 
     # pre-initiate the app, setup the database connection and make it available for globel context
     @app.before_request
     def before_request():
         if 'db' not in g:
-            g.db = Database(db_config)
+            if app.config['DB_TYPE'] == 'SQLITE':
+                g.db = DatabaseSQLite(db_config['database'])
+            else:
+                g.db = Database(db_config)
+            
             g.db.connect()
 
     # disconnect the database at app teardown
@@ -191,17 +202,30 @@ def create_app():
             hashed_password = generate_password_hash(password)
 
             # Check if username or email already exists in database
-            select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
+            select_query = None
+            if app.config['DB_TYPE'] == 'SQLITE':
+                select_query = "SELECT * FROM USER WHERE username = ? OR email = ?"
+            else:
+                select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
+
+            
             db = None
             try:
                 db = g.get('db')
                 if db is not None:
                     result = db.fetch_query(select_query, (username, email))
+                    insert_query = None
                     if result:
                         msg = 'Username or Email already exists. Please choose a different username or email.'
                     else:
-                        insert_query = 'INSERT INTO USER (username, email, password) VALUES (%s, %s, %s)'
-                        result = db.execute_vquery(insert_query, username, email, hashed_password)
+                        if app.config['DB_TYPE'] == 'SQLITE':
+                            insert_query = 'INSERT INTO USER (username, email, password) VALUES (?, ?, ?)'
+                            result = db.execute_vquery(insert_query, (username, email, hashed_password,))
+                        else:
+                            insert_query = 'INSERT INTO USER (username, email, password) VALUES (%s, %s, %s)'
+                            result = db.execute_vquery(insert_query, username, email, hashed_password)
+
+                        
                         print(f"result : {result}")
                         if result >= 0:
                             send_verification_email(email)
@@ -228,9 +252,17 @@ def create_app():
     def verify_email(token):
         try:
             email = s.loads(token, salt='email-confirm', max_age=3600)
-            select_query = "SELECT * FROM USER WHERE email = %s"
+            select_query = None
             db = g.get('db')
-            result = db.fetch_query(select_query, (email,))
+
+            select_query = None
+            if app.config['DB_TYPE'] == 'SQLITE':
+                select_query = "SELECT * FROM USER WHERE email = ?"
+                result = db.fetch_query(select_query, (email,))
+            else:
+                select_query = "SELECT * FROM USER WHERE email = %s"
+                result = db.fetch_query(select_query, (email,))
+            
             if result:
                 user_data = result[0]
                 session['loggedin'] = True
