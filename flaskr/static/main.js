@@ -336,6 +336,8 @@ async function initiateUser() {
     }
 }
 
+
+
 /**
  * Function to load the chat list
  */

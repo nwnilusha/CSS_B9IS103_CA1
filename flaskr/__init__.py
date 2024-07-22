@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 import secrets
 import string
@@ -9,6 +10,7 @@ import re
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_mail import Mail, Message
+# from flask_session import Session
 from flaskr.config import Config
 from flaskr.db import Database
 
@@ -27,6 +29,7 @@ socketio = SocketIO()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    # Session(app)  # Initialize Flask-Session
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
