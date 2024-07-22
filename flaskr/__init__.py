@@ -6,7 +6,7 @@ from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
 import re
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_mail import Mail, Message
 from flaskr.config import Config
@@ -16,6 +16,7 @@ clients = {}
 clientsSID = {}
 allClients = {}
 newClient = {}
+groups = {}
 
 def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
@@ -382,6 +383,50 @@ def create_app():
                 emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
+    
+    @socketio.on('create_group')
+    def handle_create_group(data):
+        group_name = data['group_name']
+        if group_name not in groups:
+            groups[group_name] = {
+                'members': set(),
+                'messages': []
+            }
+            emit('group_created', {'group_name': group_name}, broadcast=True)
+
+    @socketio.on('join_group')
+    def handle_join_group(data):
+        group_name = data['group_name']
+        username = data['username']
+        if group_name in groups:
+            join_room(group_name)
+            groups[group_name]['members'].add(username)
+            emit('joined_group', {'group_name': group_name, 'username': username}, room=group_name)
+
+    @socketio.on('leave_group')
+    def handle_leave_group(data):
+        group_name = data['group_name']
+        username = data['username']
+        if group_name in groups:
+            leave_room(group_name)
+            groups[group_name]['members'].discard(username)
+            emit('left_group', {'group_name': group_name, 'username': username}, room=group_name)
+
+    @socketio.on('group_message')
+    def handle_group_message(data):
+        group_name = data['group_name']
+        message = data['message']
+        username = data['username']
+        if group_name in groups:
+            groups[group_name]['messages'].append({
+                'username': username,
+                'message': message
+            })
+            emit('group_message', {
+                'group_name': group_name,
+                'username': username,
+                'message': message
+            }, room=group_name)
 
 
 

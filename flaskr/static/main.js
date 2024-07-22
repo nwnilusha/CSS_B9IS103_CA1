@@ -56,6 +56,19 @@ async function loadPrivateKey() {
     }
 }
 
+function createGroup(groupName) {
+    socket.emit('create_group', { group_name: groupName });
+}
+
+function joinGroup(groupName) {
+    socket.emit('join_group', { group_name: groupName, username: userData.Username });
+}
+
+function leaveGroup(groupName) {
+    socket.emit('leave_group', { group_name: groupName, username: userData.Username });
+}
+
+
 // Function to handle form events
 document.addEventListener('DOMContentLoaded', function () {
     console.log("Page loaded. Initializing form event handlers...");
@@ -241,6 +254,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         const typingIndicator = document.getElementById("typing-indicator");
         typingIndicator.textContent = "";
     });
+
+    // Group chat event handlers
+    socket.on('group_created', function(data) {
+        const groupList = document.getElementById('group-list');
+        const groupItem = document.createElement('li');
+        groupItem.textContent = data.group_name;
+        groupItem.onclick = () => joinGroup(data.group_name);
+        groupList.appendChild(groupItem);
+    });
+
+    socket.on('joined_group', function(data) {
+        const groupChat = document.getElementById('group-chat');
+        const groupItem = document.createElement('li');
+        groupItem.textContent = `Joined group: ${data.group_name}`;
+        groupChat.appendChild(groupItem);
+    });
+
+    socket.on('left_group', function(data) {
+        const groupChat = document.getElementById('group-chat');
+        const groupItem = document.createElement('li');
+        groupItem.textContent = `Left group: ${data.group_name}`;
+        groupChat.appendChild(groupItem);
+    });
+
+    socket.on('group_message', function(data) {
+        const groupChat = document.getElementById('group-chat');
+        const groupItem = document.createElement('li');
+        groupItem.textContent = `${data.username}: ${data.message}`;
+        groupChat.appendChild(groupItem);
+    });
+
+    document.getElementById('create-group-btn').onclick = () => {
+        const groupName = prompt('Enter group name:');
+        if (groupName) {
+            createGroup(groupName);
+        }
+    };
+
+    document.getElementById('send-group-msg-btn').onclick = () => {
+        const groupName = document.getElementById('group-name-input').value;
+        const message = document.getElementById('group-message-input').value;
+        if (groupName && message) {
+            socket.emit('group_message', { group_name: groupName, message: message, username: userData.Username });
+            document.getElementById('group-message-input').value = '';
+        }
+    };
 });
 
 

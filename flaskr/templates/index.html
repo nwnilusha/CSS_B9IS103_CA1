@@ -8,6 +8,20 @@
             padding: 5px;
             height: 20px;
         }
+        .message-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .message-content {
+            flex: 1;
+        }
+        .message-actions {
+            display: flex;
+            gap: 5px;
+        }
     </style>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -29,14 +43,14 @@
             <button class="tablinks" onclick="openTab(event, 'FriendList')">Friend List</button>
             <button class="tablinks" onclick="openTab(event, 'PendingRequests')">Pending Requests</button>
             <button class="tablinks" onclick="openTab(event, 'OpenConnections')">Open Connections</button>
+            <button class="tablinks" onclick="openTab(event, 'Groups')">Groups</button>
         </div>            
 
         <div id="FriendList" class="tabcontent">
             <div class="flex-container">
                 <div class="friends-list-container">
                     <h3>Friends</h3>
-                    <ul id="friends-list">
-                    </ul>
+                    <ul id="friends-list"></ul>
                 </div>
                 <div id="div_connect_request">
                     <p>&nbsp;&nbsp;&nbsp;GOBUZZ : Send connection request to join for the chat.&nbsp;&nbsp;&nbsp;</p>
@@ -78,6 +92,22 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="Groups" class="tabcontent">
+            <div class="group-container">
+                <div>
+                    <button id="create-group-btn">Create Group</button>
+                    <ul id="group-list"></ul>
+                </div>
+                <div>
+                    <h3>Group Chat</h3>
+                    <ul id="group-chat"></ul>
+                    <input type="text" id="group-name-input" placeholder="Group name" />
+                    <input type="text" id="group-message-input" placeholder="Type a message..." aria-label="Message input" />
+                    <button id="send-group-msg-btn">Send</button>
                 </div>
             </div>
         </div>
