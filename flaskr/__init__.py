@@ -1,3 +1,4 @@
+import os
 import secrets
 import string
 from flask import Flask, render_template, request, session, redirect, url_for, g, flash
@@ -9,9 +10,12 @@ from flask_socketio import SocketIO, emit
 from flaskr.config import Config
 from flaskr.db import Database
 
+from flask_mail import Mail, Message
+
 clients = {}
-broadcastKeys = {}
+clientsSID = {}
 allClients = {}
+newClient = {}
 
 def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
@@ -22,6 +26,7 @@ socketio = SocketIO()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    mail = Mail(app)
 
     #app.config['MYSQL_HOST'] = 'localhost'
     #app.config['MYSQL_USER'] = 'root'
@@ -74,12 +79,10 @@ def create_app():
     def index():
         if 'loggedin' in session:
             print(f"User loged in ------> {session['username']}")
+            print(f"User email ------> {session['email']}")
             userData = {
-                    'Username': session['username']
-                }
-        elif 'profile' in session:
-            userData = {
-                    'Username': session['username']
+                    'Username': session['username'],
+                    'Email': session['email']
                 }
         else:
             return redirect(url_for('login'))
@@ -106,6 +109,7 @@ def create_app():
                         if check_password_hash(user_data['password'], password):
                             session['loggedin'] = True
                             session['username'] = user_data['username']
+                            session['email'] = user_data['email']
                             return redirect(url_for('index'))
                         else:
                             msg = "Incorrect Username or Password"
@@ -143,7 +147,8 @@ def create_app():
 
         email = user_info['email']
         session['loggedin'] = True
-        session['username'] = email
+        session['username'] = email.split('@')[0] if email else 'unknown'
+        session['email'] = email
 
         return redirect(url_for('index'))
 
@@ -221,20 +226,21 @@ def create_app():
     def handle_user_join(data):
         try:
             print(f"Recepient Name-------> {data['recipient']}")
-            print(f"Recepient Public Key-------> {data['publicKey']}")
+            print(f"Recepient Public Key-------> {data['email']}")
             # if 'recipient' not in data or 'publicKey' not in data:
             #     raise ValueError("Missing 'recipient' or 'publicKey' in data")
 
             recipient = data['recipient']
-            public_key = data['publicKey']
+            # public_key = data['publicKey']
 
             print(f"User {recipient} Joined!")
 
-            clients[recipient] = request.sid
-            broadcastKeys[recipient] = public_key
-            allClients[request.sid] = recipient
+            clientsSID[recipient] = request.sid
+            clients[request.sid] = recipient
+            # broadcastKeys[recipient] = public_key
+            allClients[recipient] = data['email']
 
-            emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+            emit("allUsers", {"allClients": allClients}, broadcast=True)
         
         except ValueError as ve:
             print(f"ValueError: {ve}")
@@ -249,6 +255,36 @@ def create_app():
             emit('error', {'message': 'An unexpected error occurred. Please try again later.'})
 
 
+    @socketio.on('send_email_notification')
+    def handle_send_email_notification(data):
+        try:
+            recipient = data['recipient_name']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
+                emit('email_send_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
+            else:
+                print('Recipient not connected.')
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
+    @socketio.on('reply_email_notification')
+    def handle_reply_email_notification(data):
+        try:
+            recipient = data['recipient_name']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                print(f"Recepient Name: ------->>{recipient}")
+                print(f"Recepient SID: ------->>{recipient_sid}")
+                print(f"Sender: ------->>{clients[request.sid]}")
+                emit('email_reply_notify', {'nitification': data['notification'], 'sender': clients[request.sid]}, room=recipient_sid)
+            else:
+                print('Recipient not connected.')
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
 
     @socketio.on('message')
     def handle_message(data):
@@ -256,35 +292,28 @@ def create_app():
             recipient = data['recipient_name']
             print("Recepient name: -------"+recipient)
             print("Recepient message: -------"+data['message'])
-            if recipient in clients:
-                recipient_sid = clients[recipient]
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
                 print("Client: -------"+recipient_sid)
-                emit('message', {'message': data['message'], 'sender': allClients[request.sid]}, room=recipient_sid)
+                emit('message', {'message': data['message'], 'sender': clients[request.sid]}, room=recipient_sid)
             else:
                 print('Recipient not connected.')
         except Exception as ex:
             print(f"An error occurred: {ex}")
 
-    @socketio.on('new_message')
-    def handle_new_message(message):
-        print(f"New Message : {message}")
-        username = None
-        for user in clients:
-            if user == request.sid:
-                username = clients[request.sid]
-        emit("chat", {"message": message, "username": username}, broadcast=True)
 
     @socketio.on('logout')
     def handle_logout(data):
         try:
             print(f"Logout Data : {data}")
-            if request.sid in allClients:
-                user = allClients[request.sid]
+            if request.sid in clients:
+                user = clients[request.sid]
                 print(f"logout user data : {user}")
-                del clients[user]
-                del broadcastKeys[user]
-                del allClients[request.sid]
-                emit("allUsers", {"allUserKeys": broadcastKeys}, broadcast=True)
+                del clientsSID[user]
+                del allClients[user]
+                del clients[request.sid]
+
+                emit("logoutUsers", {"logoutUser": user}, broadcast=True)
 
                 print("User logging out !!!!")
                 emit('logout_redirect', room=request.sid)
@@ -307,6 +336,43 @@ def create_app():
     #@app.teardown_appcontext
     #def teardown_db(exception):
     #    close_db()
+
+
+    @app.route('/sendEmail', methods=['GET', 'POST'])
+    def sendEmail():
+        """Send an email from the application to get the email confirmation for registration and 
+        other purposes. 
+        """
+        if request.method == 'POST':
+            email = request.form['email']
+            subject = request.form['subject']
+            body = request.form['body']
+            print(f"email : {email} - subject: {subject} - body : {body}")
+            
+            msg = Message(
+                subject,
+                recipients=[email]
+            )
+            msg.body = body
+            mail.send(msg)
+            flash('Email sent successfully!', 'success')
+            return redirect(url_for('sendEmail'))
+
+        return render_template('sendEmail.html')
+    
+    @app.route('/composeEmail', methods=['GET', 'POST'])
+    def composeEmail():
+        if request.method == 'POST':
+            recipient = request.form.get('recipient')
+            subject = request.form.get('subject')
+            body = request.form.get('body')
+
+            # Construct the mailto link
+            mailto_link = f"mailto:{recipient}?subject={subject}&body={body}"
+            return redirect(mailto_link)
+
+        #return render_template(url_for('index'))
+        return redirect(url_for('index'))
 
     return app
 

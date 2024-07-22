@@ -1,22 +1,97 @@
 const socket = io({ autoConnect: false });
 let privateKey, publicKey;
+/**
+ * Data structure to store client data
+ * clientKeys[x] = {'username':uname, 'publicKey':'', 'email': email, 'status':'con_status'}
+ * where status can have following values
+ * 1. con_sent
+ * 2. accepted
+ * 3. con_recv
+ * 4. available
+ */
 var clientKeys = {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    document.getElementById("logout-btn").value = "Logout-"+userData.Username;
 
-   
+// Function to handle form events
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("Page loaded. Initializing form event handlers...");
+
+    // Select all forms
+    const forms = document.querySelectorAll('form');
+
+    // Add event listener to each form
+    forms.forEach(form => {
+        form.addEventListener('submit', function (event) {
+            // Prevent default form submission, this is from the original form
+            event.preventDefault();
+
+            // Serialize form data
+            const formData = new FormData(form);
+            const email = formData.get('email');
+            const subject = encodeURIComponent(formData.get('subject'));
+            const body = encodeURIComponent(formData.get('body'));
+
+            // Create mailto link
+            const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+
+            // Open mailto link
+            window.location.href = mailtoLink;
+
+            // Reset the form values after submission
+            form.reset();
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById("logout-btn").value = "Logout-" + userData.Username;
+
+    socket.on('email_send_notify', function (data) {
+        try {
+            clientKeys[data['sender']].status = "con_recv"
+            loadConReceiveFriends();
+            loadAvailableFriends();
+        } catch (error) {
+            console.error("Error message error:", error);
+        }
+    })
+
+
+    socket.on('email_reply_notify', function (data) {
+        try {
+            clientKeys[data['sender']].status = "con_reply_recv";
+            loadAvailableFriends();
+            loadConReceiveFriends();
+        } catch (error) {
+            console.error("Error message error:", error);
+        }
+    })
 
     socket.on('message', async (data) => {
         try {
+
+            if (chatClient != data["sender"]){
+                let ul = document.getElementById("chat-msg");
+                let li = document.createElement("li");
+                li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
+                li.classList.add("center_user");
+                ul.appendChild(li);
+                ul.scrollTop = ul.scrollHeight;
+
+                chatClient = data["sender"]
+                chatClientPK = clientKeys[data["sender"]].publicKey
+            }
+
             isCurrentUser = false;
+            
             console.log("Sender------------", data["sender"]);
             console.log("Sender Encrypted Message------------", data["message"]);
 
             const decryptedMessage = await decryptMessage(privateKey, data["message"]);
             console.log("Sender Decrypted Message------------", decryptedMessage);
+
 
             let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
@@ -28,20 +103,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error("Error message error:", error);
         }
     });
-    
-    socket.on("allUsers", function (data) {
-        clientKeys = data["allUserKeys"];
-        console.log(userData.Username);
-        delete clientKeys[userData.Username];
-        loadFriends();
-    })
 
-    socket.on('logout_redirect', function() {
+    socket.on("allUsers", function (data) {
+        //console.log('All clients----->',data['allClients'])
+        for (const [key, email] of Object.entries(data["allClients"])) {
+            console.log("-------start-------");
+            console.log('Client key ------ > ', key)
+            console.log('Username ------ > ', username)
+            if ((!(key in clientKeys)) && (key != username)) {
+                console.log("All Users------>", key);
+                clientKeys[key] = {
+                    'username': key,
+                    'publicKey': '',
+                    'email': email,
+                    'status': 'available'
+                }
+            }
+            console.log("-------end-------");
+        }
+        console.log('All users available ------ > ', clientKeys)
+        loadAvailableFriends();
+    });
+
+    socket.on('logoutUsers', function (data) {
+        var clientKey = data['logoutUser']
+        console.log('User logout========>', clientKey)
+        console.log('Client keys========>', clientKeys)
+        if (clientKey in clientKeys) {
+            delete clientKeys[clientKey];
+            console.log('Client keys after delete========>', clientKeys)
+            loadAvailableFriends();
+            loadConReceiveFriends();
+            loadAccepetdFriends();
+        }
+    });
+
+    socket.on('logout_redirect', function () {
         logout()
     });
 
-    socket.on('error',function(errorData){
-        console.log("Logout Error ------- ",errorData.message)
+    socket.on('error', function (errorData) {
+        console.log("Logout Error ------- ", errorData.message)
     });
 
     document.getElementById('send').onclick = async () => {
@@ -53,70 +155,270 @@ document.addEventListener('DOMContentLoaded', async () => {
             await sendMessage();
         }
     });
-    
+
     document.getElementById('logout-btn').onclick = () => {
-        socket.emit('logout', { user_name:  username});
+        socket.emit('logout', { user_name: username });
     };
+
+
 });
+
 
 async function initiateUser() {
     try {
         username = userData.Username;
-        const clientPublicKey = await generateRSAKeyPair();
+        publicKey = await generateRSAKeyPair();
 
         socket.connect();
-
+        console.log('Username------->', userData.Username)
+        console.log('Email------->', userData.Email)
         socket.on("connect", function () {
-            socket.emit('user_join', { recipient: userData.Username, publicKey: clientPublicKey });
+            // socket.emit('user_join', { recipient: userData.Username, publicKey: clientPublicKey });
+            socket.emit('user_join', { recipient: userData.Username, email: userData.Email });
         });
-        
-        
+
+
         document.getElementById("chat_header_text").textContent = `Chat Website [${userData.Username}]`;
-        
+
     } catch (error) {
         console.error("Error initiating user:", error);
     }
 }
 
+/**
+ * Function to load the chat list
+ */
+function loadAvailableFriends() {
+    var friendsList = NaN;
 
-
-function loadFriends() {
-    const friendsList = document.getElementById("friends-list");
+    friendsList = document.getElementById("friends-list");
     friendsList.innerHTML = "";
 
-    let highlightedLi = null;
+    for (const [key, user] of Object.entries(clientKeys)) {
+        console.log("user==" + user['username']);
+        console.log("user==" + user['email']);
+        console.log("user==" + user['status']);
 
-    for (const [user, key] of Object.entries(clientKeys)) {
         let li = document.createElement("li");
-        li.innerHTML = `
-            <div class="status-indicator"></div>
-            <div class="username">${user}</div>
-            <div class="last-active" id="last-active-${user}"></div>
-        `;
 
-        li.addEventListener("click", () => {
-            chatClient = user;
-            chatClientPK = key
+        console.log("user['status'] available=====" + user['status']);
 
-            let ul = document.getElementById("chat-msg");
-            ul.innerHTML = "";
-            let li = document.createElement("li");
-            li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
-            li.classList.add("center_user");
-            ul.appendChild(li);
-            ul.scrollTop = ul.scrollHeight;
-        });
+        if (user['status'] == 'con_sent') {
+            li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" style="background-color:rgb(196, 128, 32);" value="Invitation Sent" disabled></div>
+                `;
+        }
+        else if (user['status'] == 'available') {
+            li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)})'></div>
+                `;
+        }
 
         friendsList.appendChild(li);
     }
 }
 
+/**
+ * Function to load the chat list
+ */
+function loadConReceiveFriends() {
+    var friendsList = NaN;
+
+    friendsList = document.getElementById("received-list");
+    friendsList.innerHTML = "";
+
+    for (const [key, user] of Object.entries(clientKeys)) {
+        console.log("user==" + user['username']);
+        console.log("user==" + user['email']);
+        console.log("user==" + user['status']);
+
+        let li = document.createElement("li");
+
+        console.log("user['status'] loadConReceiveFriends=====" + user['status']);
+        if ((user['status'] == 'con_recv' || user['status'] == 'con_reply_recv') && user['publicKey'] == "") {
+            li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)})'></div>
+                `;
+        }
+        else if (user['status'] == 'con_recv' && user['publicKey'] != "") {
+            li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                    <div class="action"><input type="button" name="add_friend" value="Send Confirmation" style="background-color:rgb(196, 128, 32);" onclick='loadReply(${JSON.stringify(user)})'></div>
+                `;
+        }
+
+        friendsList.appendChild(li);
+    }
+}
+
+/**
+ * onclick method for button click 
+ * @param {*} friendObj 
+ */
+function OnAddParsePhaseClick(friendObj) {
+    //console.log("OnAddParsePhaseClick----:");
+    var parsePhase = document.getElementById("body_parsephase").value;
+    console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
+    clientKeys[friendObj.username].publicKey = parsePhase;
+    document.getElementById('email_request_form').innerHTML = '';
+    document.getElementById('email_reply_form').innerHTML = '';
+    loadConReceiveFriends();
+    loadAccepetdFriends();
+}
+
+
+/**
+ * Function to load the chat list
+ */
+function loadAccepetdFriends() {
+    var friendsList = NaN;
+
+    let highlightedLi = null;
+
+    friendsList = document.getElementById("connections-list");
+    friendsList.innerHTML = "";
+
+    for (const [key, user] of Object.entries(clientKeys)) {
+        console.log("user==" + user['username']);
+        console.log("user==" + user['email']);
+        console.log("user==" + user['status']);
+
+        let li = document.createElement("li");
+
+        console.log("user['status'] loadAccepetdFriends=====" + user['status']);
+        if (user['status'] == 'accepted') {
+            li.innerHTML = `
+                    <div class="status-indicator"></div>
+                    <div class="username">${key}</div>
+                    <div class="last-active" id="last-active-${key}"></div>
+                `;
+
+            li.addEventListener("click", () => {
+                chatClient = key;
+                chatClientPK = user.publicKey
+
+                let ul = document.getElementById("chat-msg");
+                let li = document.createElement("li");
+                li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+                li.classList.add("center_user");
+                ul.appendChild(li);
+                ul.scrollTop = ul.scrollHeight;
+            });
+        }
+
+        friendsList.appendChild(li);
+    }
+}
+
+/**
+ * Button click function for sending connection request via an email
+ * this will open the email client for sending the email.
+ */
+function OnRequestSend() {
+
+    // // Get field data for email.
+    // const email = document.getElementById("email").value;
+    // const subject = document.getElementById('subject').value;
+    // const body = document.getElementById('body').value;
+
+    // // Create mailto link
+    // const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
+
+    // // Open mailto link
+    // window.location.href = mailtoLink;
+
+    document.getElementById('email_request_form').innerHTML = '';
+    document.getElementById('email_reply_form').innerHTML = '';
+}
+
+/**
+ * Function to load the email request
+ */
+function loadRequest(obj) {
+    console.log('Load request-------->', obj)
+
+    clientKeys[obj.username].status = "con_sent"
+    socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+    loadAvailableFriends();
+    const formContent = `
+        <div class="email-form-container">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="${obj.email}" required>            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
+            <label for="body">Body:</label>
+            <textarea id="body" name="body" required>${publicKey}</textarea>            
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+        </div>
+    `;
+    // load to the div_connect_request
+    //document.getElementById('div_connect_request').innerHTML = formContent;
+    document.getElementById('email_request_form').innerHTML = formContent;
+}
+
+/**
+ * Function to load the email request
+ */
+function loadReply(obj) {
+    console.log('Load request-------->', obj)
+
+    formContent = NaN;
+
+
+    if (clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "") {
+        console.log("TEST----1");
+        formContent = `
+        <div class="email-form-container">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="${obj.email}" required>            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
+            <label for="body">Body:</label>
+            <textarea id="body" name="body" required>${publicKey}</textarea>            
+            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+        </div>
+        `;
+        clientKeys[obj.username].status = "accepted"
+        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        loadConReceiveFriends();
+        loadAccepetdFriends();
+    }
+    else {
+        //<div class="action"><input type="button" name="connect" value="Add ParsePhase" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'></div>
+        formContent = `
+        <div class="email-form-container">
+            <label for="body_parsephase">ParsePhase:</label>
+            <textarea id="body_parsephase" name="body" required>Enter the ParsePhase received via the email. Please check email and enter the ParsePhase</textarea>
+            <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
+        </div>
+        `;
+        if (clientKeys[obj.username].status == "con_reply_recv") {
+            clientKeys[obj.username].status = "accepted";
+        }
+    }
+
+    // load to the div_connect_request
+    //document.getElementById('div_connect_request').innerHTML = formContent;
+    document.getElementById('email_reply_form').innerHTML = formContent;
+}
+
 
 async function sendMessage() {
     const clientMessage = document.getElementById('message-input').value;
-    console.log("Message before encrypt-----------",clientMessage)
-    const encryptedMessage = await encryptMessage(chatClientPK,clientMessage)
-    console.log("Message after encrypt-----------",encryptedMessage)
+    console.log("Message before encrypt-----------", clientMessage)
+    const encryptedMessage = await encryptMessage(chatClientPK, clientMessage)
+    console.log("Message after encrypt-----------", encryptedMessage)
     if (chatClient && clientMessage.trim() !== "") {
         document.getElementById("message-input").value = "";
         socket.emit('message', { recipient_name: chatClient, message: encryptedMessage });
@@ -149,7 +451,7 @@ async function generateRSAKeyPair() {
 
     const publicKeyArrayBuffer = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
     const publicKeyBase64 = arrayBufferToBase64(publicKeyArrayBuffer);
-    
+
     console.log("Generated Public Key (Base64):", publicKeyBase64);
     privateKey = keyPair.privateKey;
 
@@ -244,8 +546,38 @@ function isBase64(str) {
     return base64Pattern.test(str);
 }
 
+function confirmLogout() {
+
+    const modal = document.getElementById("confirmationModal");
+    modal.style.display = "block";
+
+    const confirmYes = document.getElementById("confirmYes");
+    const confirmNo = document.getElementById("confirmNo");
+
+    confirmYes.onclick = null;
+    confirmNo.onclick = null;
+
+    confirmYes.addEventListener('click', function () {
+        socket.emit('logout', { user_name: username });
+    });
+
+    confirmNo.addEventListener('click', function () {
+        modal.style.display = "none";
+    });
+
+    const closeBtn = document.getElementsByClassName("close")[0];
+    closeBtn.onclick = function () {
+        modal.style.display = "none";
+    };
+
+    window.onclick = function (event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    };
 
 
+}
 
 function logout() {
     fetch('/logout', {
