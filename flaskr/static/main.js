@@ -208,7 +208,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         socket.emit('stop_typing', { sender: username, recipient: chatClient });
     };
 
-    document.getElementById("message-input").addEventListener("keypress", function () {
+    document.getElementById("message-input").addEventListener("keypress", async function (event) {
+        if (event.key === "Enter") {
+            await sendMessage();
+        }
         console.log("Keypress detected, sending typing event");
         socket.emit('typing', { sender: username, recipient: chatClient });
     });
@@ -247,6 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initiateUser() {
     try {
         username = userData.Username;
+        console.log("Initiate user===============================>>",username)
 
         // Check if private key exists in localStorage
         const privateKeyBase64 = localStorage.getItem('privateKey');
