@@ -116,13 +116,21 @@ def create_app():
         if request.method == 'POST':
             username = request.form['username']
             password = request.form['password']
+            print(f'Password ----------->{password}')
 
-            select_query = "SELECT * FROM USER WHERE username=%s"
+            select_query = None
             db = None
             try:
                 db = g.get('db')
 
                 if db is not None :
+                    if db is not None :
+                        if app.config['DB_TYPE'] == 'SQLITE':
+                            select_query = "SELECT * FROM USER WHERE username=?"
+                        else:
+                            select_query = "SELECT * FROM USER WHERE username=%s"
+
+                    result = db.fetch_query(select_query, (username,))
                     result = db.fetch_query(select_query, (username,))
                     if result:
                         user_data = result[0]
