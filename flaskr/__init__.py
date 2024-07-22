@@ -41,8 +41,7 @@ def create_app():
             'user': app.config['MYSQL_USER'],
             'password': app.config['MYSQL_PASSWORD'],
             'host': app.config['MYSQL_HOST'],
-            'database': app.config['MYSQL_DB'],
-            'db_type': app.config['DB_TYPE']
+            'database': app.config['MYSQL_DB']
         }
     elif app.config['DB_TYPE'] == 'SQLITE':
         db_config = {
