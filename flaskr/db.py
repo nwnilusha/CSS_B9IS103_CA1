@@ -42,7 +42,71 @@ def init_db_command():
 
 import mysql.connector
 from mysql.connector import Error
+# import sqlite database libraries
+import sqlite3
+from flask import g, current_app
+# Database class for SqLite
+class DatabaseSQLite:
+    def __init__(self, database_path=None):
+        if database_path is None:
+            database_path = current_app.config['DATABASE']
+        self.database_path = database_path
 
+    def connect(self):
+        """Connects to the specific database."""
+        conn = sqlite3.connect(self.database_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def get_db(self):
+        """Opens a new database connection if there is none yet for the current application context."""
+        if not hasattr(g, 'sqlite_db'):
+            g.sqlite_db = self.connect()
+        return g.sqlite_db
+
+    def close_db(self, error=None):
+        """Closes the database again at the end of the request."""
+        if hasattr(g, 'sqlite_db'):
+            g.sqlite_db.close()
+
+    def execute_vquery(self, query, params=()):
+        """Execute an insert or update query"""
+        db = self.get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute(query, params)
+            db.commit()
+            return cursor.lastrowid
+        except sqlite3.Error as er:
+            print(f"DB query execution failure: {er}")
+            db.rollback()
+            raise
+        finally:
+            cursor.close()
+
+    def disconnect(self):
+        """Disconnect the already initialized database connection"""
+        self.close_db()
+        print("Database connection is disconnected")
+
+    def fetch_query(self, query, params=()):
+        """Execute a select query and return the result"""
+        db = self.get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute(query, params)
+            result = cursor.fetchall()
+            for row in result:
+                print(f"data-> {row}")
+            return [dict(row) for row in result]
+        except sqlite3.Error as er:
+            print(f"DB query execution failure: {er}")
+            return None
+        finally:
+            cursor.close()
+
+
+# Database class for mysql connectivity
 class Database:
     def __init__(self, config):
         self.config = config
