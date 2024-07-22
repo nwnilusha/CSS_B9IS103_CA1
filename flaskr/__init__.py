@@ -147,6 +147,7 @@ def create_app():
         return render_template('login.html', msg=msg)
 
 
+
     @app.route('/google/login')
     def google_login():
         state = secrets.token_urlsafe(32)
