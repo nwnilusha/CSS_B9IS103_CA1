@@ -21,6 +21,9 @@ class Config:
     MYSQL_DB = "GOBUZZ"
     GOOGLE_CLIENT_ID = '484213283363-0lr7vmgdk81h02f8e9p8pgalq1n9ov6v.apps.googleusercontent.com'
     GOOGLE_CLIENT_SECRET = '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'
+    SQLITE_DB = "flaskr/instance/GOBUZZ.db"
+    # introduce DB type, vlues are MYSQL or SQLITE
+    DB_TYPE = "SQLITE"
 
     # SMTP Configuration for Gmail
     MAIL_SERVER = 'smtp.gmail.com'
