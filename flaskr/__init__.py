@@ -98,6 +98,7 @@ def create_app():
         mail.send(msg)
         flash('A verification email has been sent to your email address. Please check your inbox.', 'info')
 
+
     # Application's main page
     @app.route("/index")
     def index():
@@ -115,26 +116,23 @@ def create_app():
         
 
     @app.route('/', methods=['GET', 'POST'])
+    @app.route('/', methods=['GET', 'POST'])
     def login():
-        msg = ''
+        msg = request.args.get('message', '')  # Get the message from the query parameters
         if request.method == 'POST':
             username = request.form['username']
             password = request.form['password']
-            print(f'Password ----------->{password}')
-
+            
             select_query = None
             db = None
             try:
                 db = g.get('db')
+                if db is not None:
+                    if app.config['DB_TYPE'] == 'SQLITE':
+                        select_query = "SELECT * FROM USER WHERE username=?"
+                    else:
+                        select_query = "SELECT * FROM USER WHERE username=%s"
 
-                if db is not None :
-                    if db is not None :
-                        if app.config['DB_TYPE'] == 'SQLITE':
-                            select_query = "SELECT * FROM USER WHERE username=?"
-                        else:
-                            select_query = "SELECT * FROM USER WHERE username=%s"
-
-                    result = db.fetch_query(select_query, (username,))
                     result = db.fetch_query(select_query, (username,))
                     if result:
                         user_data = result[0]
@@ -153,6 +151,7 @@ def create_app():
             except Exception as ex:
                 msg = f"Exception occurred: {ex}"
         return render_template('login.html', msg=msg)
+
 
     @app.route('/google/login')
     def google_login():
@@ -267,24 +266,21 @@ def create_app():
             select_query = None
             db = g.get('db')
 
-            select_query = None
             if app.config['DB_TYPE'] == 'SQLITE':
                 select_query = "SELECT * FROM USER WHERE email = ?"
-                result = db.fetch_query(select_query, (email,))
             else:
                 select_query = "SELECT * FROM USER WHERE email = %s"
-                result = db.fetch_query(select_query, (email,))
+            
+            result = db.fetch_query(select_query, (email,))
             
             if result:
-                user_data = result[0]
-                session['loggedin'] = True
-                session['username'] = user_data['username']
-                session['email'] = user_data['email']
-                return redirect(url_for('index'))
+                # Assuming verification is successful if the email exists in the database
+                return redirect(url_for('login', message='Verification successful! Please log in.'))
             else:
                 return render_template('verify_email.html', message='Verification failed. User not found.')
         except SignatureExpired:
             return render_template('verify_email.html', message='The verification link has expired.')
+
     
     @socketio.on('connect')
     def handle_connect():
