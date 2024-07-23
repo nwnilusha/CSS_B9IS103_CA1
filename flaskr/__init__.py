@@ -1,14 +1,16 @@
+from datetime import timedelta
 import os
 import secrets
 import string
-from flask import Flask, render_template, request, session, redirect, url_for, g, flash
+from flask import Flask, render_template, request, session, redirect, url_for, g, flash, jsonify
 from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
 import re
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired
 from flask_mail import Mail, Message
+from flask_session import Session
 from flaskr.config import Config
 from flaskr.db import Database
 from flaskr.db import DatabaseSQLite
@@ -27,6 +29,10 @@ socketio = SocketIO()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    Session(app)  # Initialize Flask-Session
+    app.config['SESSION_PERMANENT'] = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+    
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
@@ -52,13 +58,21 @@ def create_app():
     # pre-initiate the app, setup the database connection and make it available for globel context
     @app.before_request
     def before_request():
+        session.permanent = True
         if 'db' not in g:
             if app.config['DB_TYPE'] == 'SQLITE':
                 g.db = DatabaseSQLite(db_config['database'])
             else:
                 g.db = Database(db_config)
-            
             g.db.connect()
+
+    @app.route('/get_session')
+    def get_session():
+        if 'loggedin' in session:
+            return jsonify({'status': 'active'})
+        else:
+            return jsonify({'status': 'inactive'})
+
 
     # disconnect the database at app teardown
     @app.teardown_appcontext

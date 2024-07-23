@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
@@ -32,4 +33,9 @@ class Config:
     MAIL_USERNAME = 'nashl449@gmail.com'
     MAIL_PASSWORD = 'jhmo kefg bkqa syee'
     MAIL_DEFAULT_SENDER = 'nashl449@gmail.com'
+
+    # Session Configuration
+    SESSION_TYPE = 'filesystem'
+    SESSION_FILE_DIR = './flask_session/'
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=30)  # Change to 30 minutes for production
 

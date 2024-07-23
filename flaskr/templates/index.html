@@ -8,6 +8,36 @@
             padding: 5px;
             height: 20px;
         }
+
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+            padding: 10px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, bottom 0.5s ease-in-out;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 30px;
+        }
+
+        .toast.hide {
+            visibility: hidden;
+            opacity: 0;
+            bottom: 0;
+        }
     </style>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -19,7 +49,7 @@
     <title>Chat Website</title>
 </head>
 
-<body onload=initiateUser()> 
+<body onload="initiateUser()">
     <div class="chat-container">
         <div class="chat-header">
             <h3 id="chat_header_text">Chat Website</h3>
@@ -35,8 +65,7 @@
             <div class="flex-container">
                 <div class="friends-list-container">
                     <h3>Friends</h3>
-                    <ul id="friends-list">
-                    </ul>
+                    <ul id="friends-list"></ul>
                 </div>
                 <div id="div_connect_request">
                     <p>&nbsp;&nbsp;&nbsp;GOBUZZ : Send connection request to join for the chat.&nbsp;&nbsp;&nbsp;</p>
@@ -82,6 +111,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Your session has expired. Redirecting to login...</div>
+
     <script>
         var userData = {{ userData | tojson }};
         console.log('User data username -------', userData.Username);

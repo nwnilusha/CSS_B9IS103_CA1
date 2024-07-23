@@ -491,6 +491,51 @@ function OnRequestSend() {
     document.getElementById('email_reply_form').innerHTML = '';
 }
 
+// Toast notification and session check logic
+function showToast() {
+    var x = document.getElementById("toast");
+    x.classList.add("show");
+    setTimeout(function() {
+        x.classList.remove("show");
+        window.location.href = '/logout';
+    }, 6000); // Redirect to logout after showing toast
+}
+
+function checkSession() {
+    fetch('/get_session')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.active) {
+                showToast();
+            }
+        });
+}
+
+setInterval(checkSession, 1800000); // Check session every 30 minute (for testing purposes)
+
+// Inactivity check logic
+let inactivityTime = function () {
+    let time;
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onmousedown = resetTimer;  // Catches touchscreen presses
+    window.ontouchstart = resetTimer; // Catches touchscreen swipes
+    window.ontouchmove = resetTimer;  // Catches touchscreen swipes
+    window.onclick = resetTimer;      // Catches touchpad clicks
+    window.onkeypress = resetTimer;   // Catches key presses
+
+    function logout() {
+        checkSession(); // Only check session when logging out due to inactivity
+    }
+
+    function resetTimer() {
+        clearTimeout(time);
+        time = setTimeout(logout, 1800000);  // Logout after 30 minute of inactivity (for testing purposes)
+    }
+};
+
+inactivityTime(); // Initialize inactivity timer
+
 /**
  * Function to load the email request
  */
