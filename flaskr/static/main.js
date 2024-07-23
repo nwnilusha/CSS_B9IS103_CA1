@@ -1,4 +1,7 @@
-const socket = io({ autoConnect: false });
+//const socket = io({ autoConnect: false });
+//var socket = io.connect('wss://' + document.domain + ':' + location.port);
+var socket = io.connect('https://gobuzz-c5a12ea3ac14.herokuapp.com/');
+            
 let privateKey, publicKey;
 /**
  * Data structure to store client data
@@ -241,7 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("-------end-------");
         }
         console.log('All users available ------ > ', clientKeys)
-        saveClientKeys();
+        //saveClientKeys();
         loadAvailableFriends();
     });
 
@@ -252,7 +255,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
-            saveClientKeys();
+            //saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
             loadAccepetdFriends();
@@ -330,7 +333,10 @@ async function initiateUser() {
         loadPublicKey();
         */
 
-        socket.connect();
+        //socket.connect();
+        var socket = io.connect('wss://' + document.domain + ':' + location.port);
+            
+
         console.log('Username------->', userData.Username)
         console.log('Email------->', userData.Email)
         socket.on("connect", function () {
