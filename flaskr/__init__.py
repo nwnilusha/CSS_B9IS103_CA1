@@ -23,7 +23,9 @@ def generate_secret_key(length=32):
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 #socketio = SocketIO()
-socketio = SocketIO(app, async_mode='eventlet')
+#socketio = SocketIO(app, async_mode='eventlet')
+#help avoid CORS issues
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 def create_app():
     app = Flask(__name__)
