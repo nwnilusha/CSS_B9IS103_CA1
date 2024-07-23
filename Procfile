@@ -1,3 +1,1 @@
-#web: gunicorn flaskr:app
-web: gunicorn -k eventlet -w 1 flaskr:app
-
+web: gunicorn -k gevent -w 1 flaskr:app
