@@ -22,7 +22,8 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-socketio = SocketIO()
+#socketio = SocketIO()
+socketio = SocketIO(app, async_mode='eventlet')
 
 def create_app():
     app = Flask(__name__)
