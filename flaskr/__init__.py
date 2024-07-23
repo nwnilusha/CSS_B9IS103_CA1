@@ -7,10 +7,11 @@ from authlib.integrations.flask_client import OAuth
 import mysql.connector
 import re
 from flask_socketio import SocketIO, emit
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired
+from flask_mail import Mail, Message
 from flaskr.config import Config
 from flaskr.db import Database
-
-from flask_mail import Mail, Message
+from flaskr.db import DatabaseSQLite
 
 clients = {}
 clientsSID = {}
@@ -27,6 +28,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     mail = Mail(app)
+    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
     #app.config['MYSQL_HOST'] = 'localhost'
     #app.config['MYSQL_USER'] = 'root'
@@ -34,18 +36,28 @@ def create_app():
     #app.config['MYSQL_DB'] = 'GOBUZZ'
 
     # create the db config
-    db_config = {
-        'user': app.config['MYSQL_USER'],
-        'password': app.config['MYSQL_PASSWORD'],
-        'host': app.config['MYSQL_HOST'],
-        'database': app.config['MYSQL_DB']
-    }
+    if app.config['DB_TYPE'] == 'MYSQL':    
+        db_config = {
+            'user': app.config['MYSQL_USER'],
+            'password': app.config['MYSQL_PASSWORD'],
+            'host': app.config['MYSQL_HOST'],
+            'database': app.config['MYSQL_DB']
+        }
+    elif app.config['DB_TYPE'] == 'SQLITE':
+        db_config = {
+            'database': app.config['SQLITE_DB'],
+            'db_type': app.config['DB_TYPE']
+        }
 
     # pre-initiate the app, setup the database connection and make it available for globel context
     @app.before_request
     def before_request():
         if 'db' not in g:
-            g.db = Database(db_config)
+            if app.config['DB_TYPE'] == 'SQLITE':
+                g.db = DatabaseSQLite(db_config['database'])
+            else:
+                g.db = Database(db_config)
+            
             g.db.connect()
 
     # disconnect the database at app teardown
@@ -74,6 +86,14 @@ def create_app():
     socketio.init_app(app) 
     bcrypt = Bcrypt(app)
 
+    def send_verification_email(email):
+        token = s.dumps(email, salt='email-confirm')
+        verification_url = url_for('verify_email', token=token, _external=True)
+        msg = Message('Email Verification', recipients=[email])
+        msg.body = f'Please verify your email by clicking the following link: {verification_url}'
+        mail.send(msg)
+        flash('A verification email has been sent to your email address. Please check your inbox.', 'info')
+
     # Application's main page
     @app.route("/index")
     def index():
@@ -96,13 +116,21 @@ def create_app():
         if request.method == 'POST':
             username = request.form['username']
             password = request.form['password']
+            print(f'Password ----------->{password}')
 
-            select_query = "SELECT * FROM USER WHERE username=%s"
+            select_query = None
             db = None
             try:
                 db = g.get('db')
 
                 if db is not None :
+                    if db is not None :
+                        if app.config['DB_TYPE'] == 'SQLITE':
+                            select_query = "SELECT * FROM USER WHERE username=?"
+                        else:
+                            select_query = "SELECT * FROM USER WHERE username=%s"
+
+                    result = db.fetch_query(select_query, (username,))
                     result = db.fetch_query(select_query, (username,))
                     if result:
                         user_data = result[0]
@@ -181,30 +209,40 @@ def create_app():
             # Hash the password before saving to database
             hashed_password = generate_password_hash(password)
 
-            # Check if username already exists in database
-            select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
+            # Check if username or email already exists in database
+            select_query = None
+            if app.config['DB_TYPE'] == 'SQLITE':
+                select_query = "SELECT * FROM USER WHERE username = ? OR email = ?"
+            else:
+                select_query = "SELECT * FROM USER WHERE username = %s OR email = %s"
+
+            
             db = None
             try:
                 db = g.get('db')
-
-                if db is not None :
+                if db is not None:
                     result = db.fetch_query(select_query, (username, email))
-
+                    insert_query = None
                     if result:
                         msg = 'Username or Email already exists. Please choose a different username or email.'
                     else:
-                        insert_query = 'INSERT INTO USER (username, email, password) VALUES (%s, %s, %s)'
-                        result = db.execute_vquery(insert_query, username, email, hashed_password)
+                        if app.config['DB_TYPE'] == 'SQLITE':
+                            insert_query = 'INSERT INTO USER (username, email, password) VALUES (?, ?, ?)'
+                            result = db.execute_vquery(insert_query, (username, email, hashed_password,))
+                        else:
+                            insert_query = 'INSERT INTO USER (username, email, password) VALUES (%s, %s, %s)'
+                            result = db.execute_vquery(insert_query, username, email, hashed_password)
+
+                        
                         print(f"result : {result}")
                         if result >= 0:
-                            return redirect(url_for('login'))
+                            send_verification_email(email)
+                            return redirect(url_for('verify_notice'))
                         else:
                             msg = 'User registration failure: DB error'
-
                 else:
                     print("DB connection is not created. Please check the connection string.")
                     msg = "Database connectivity Error, Check the connection string"
-
             except Exception as ex:
                 print(f"Exception occurred: {ex}")
                 msg = f"User registration failure: Exception occurred: {ex}"
@@ -214,6 +252,36 @@ def create_app():
                 return render_template('signup.html', msg=msg)
         return render_template('signup.html')
 
+    @app.route('/verify_notice')
+    def verify_notice():
+        return render_template('verify_notice.html')
+
+    @app.route('/verify_email/<token>')
+    def verify_email(token):
+        try:
+            email = s.loads(token, salt='email-confirm', max_age=3600)
+            select_query = None
+            db = g.get('db')
+
+            select_query = None
+            if app.config['DB_TYPE'] == 'SQLITE':
+                select_query = "SELECT * FROM USER WHERE email = ?"
+                result = db.fetch_query(select_query, (email,))
+            else:
+                select_query = "SELECT * FROM USER WHERE email = %s"
+                result = db.fetch_query(select_query, (email,))
+            
+            if result:
+                user_data = result[0]
+                session['loggedin'] = True
+                session['username'] = user_data['username']
+                session['email'] = user_data['email']
+                return redirect(url_for('index'))
+            else:
+                return render_template('verify_email.html', message='Verification failed. User not found.')
+        except SignatureExpired:
+            return render_template('verify_email.html', message='The verification link has expired.')
+    
     @socketio.on('connect')
     def handle_connect():
         print('Client Connected')
@@ -331,6 +399,31 @@ def create_app():
         session.pop('profile', None) 
         session.pop('google_oauth_state', None)
         return redirect(url_for('login'))
+    
+    # Typing Indicator in the server side
+    @socketio.on('typing')
+    def handle_typing(data):
+        try:
+            #print(f"Typing event from {data['sender']} to {data['recipient']}")
+            recipient = data['recipient']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
+    @socketio.on('stop_typing')
+    def handle_stop_typing(data):
+        try:
+            #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
+            recipient = data['recipient']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
+
+
 
     # comminting following method, refer to the method defined earlier.
     #@app.teardown_appcontext
