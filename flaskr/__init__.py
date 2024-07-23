@@ -400,28 +400,28 @@ def create_app():
         session.pop('google_oauth_state', None)
         return redirect(url_for('login'))
     
-    # Typing Indicator in the server side
-    @socketio.on('typing')
-    def handle_typing(data):
-        try:
-            #print(f"Typing event from {data['sender']} to {data['recipient']}")
-            recipient = data['recipient']
-            if recipient in clientsSID:
-                recipient_sid = clientsSID[recipient]
-                emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
-        except Exception as ex:
-            print(f"An error occurred: {ex}")
+    # # Typing Indicator in the server side
+    # @socketio.on('typing')
+    # def handle_typing(data):
+    #     try:
+    #         #print(f"Typing event from {data['sender']} to {data['recipient']}")
+    #         recipient = data['recipient']
+    #         if recipient in clientsSID:
+    #             recipient_sid = clientsSID[recipient]
+    #             emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
+    #     except Exception as ex:
+    #         print(f"An error occurred: {ex}")
 
-    @socketio.on('stop_typing')
-    def handle_stop_typing(data):
-        try:
-            #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
-            recipient = data['recipient']
-            if recipient in clientsSID:
-                recipient_sid = clientsSID[recipient]
-                emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
-        except Exception as ex:
-            print(f"An error occurred: {ex}")
+    # @socketio.on('stop_typing')
+    # def handle_stop_typing(data):
+    #     try:
+    #         #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
+    #         recipient = data['recipient']
+    #         if recipient in clientsSID:
+    #             recipient_sid = clientsSID[recipient]
+    #             emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
+    #     except Exception as ex:
+    #         print(f"An error occurred: {ex}")
 
 
 
