@@ -13,6 +13,10 @@ from flaskr.config import Config
 from flaskr.db import Database
 from flaskr.db import DatabaseSQLite
 
+from gevent import monkey
+monkey.patch_all()
+
+
 clients = {}
 clientsSID = {}
 allClients = {}
@@ -22,9 +26,17 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
+#socketio = SocketIO()
+#socketio = SocketIO(app, async_mode='eventlet')
+#help avoid CORS issues
+app = Flask(__name__)
+app.config.from_object(Config)
+#socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
+
 def create_app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
+    #app = Flask(__name__)
+    #app.config.from_object(Config)
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     socketio = SocketIO(app, cors_allowed_origins="*")
@@ -463,6 +475,8 @@ def create_app():
 
     return app
 
-if __name__ == "__main__":
-    app = create_app()
-    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+
+app = create_app()
+#if __name__ == "__main__":
+#    app = create_app()
+#    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
