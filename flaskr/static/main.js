@@ -1,8 +1,4 @@
 const socket = io({ autoConnect: false });
-//var socket = io.connect('wss://' + document.domain + ':' + location.port);
-//var socket = io.connect('https://gobuzz-c5a12ea3ac14.herokuapp.com/');
-//var socket = io.connect();            
-
 let privateKey, publicKey;
 /**
  * Data structure to store client data
@@ -13,116 +9,114 @@ let privateKey, publicKey;
  * 3. con_recv
  * 4. available
  */
-// var clientKeys = JSON.parse(localStorage.getItem('clientKeys')) || {};
-var clientKeys = {};
+var clientKeys = JSON.parse(localStorage.getItem('clientKeys')) || {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
-// // Function to save clientKeys to localStorage
-// function saveClientKeys() {
-//     localStorage.setItem('clientKeys', JSON.stringify(clientKeys));
-// }
+// Function to save clientKeys to localStorage
+function saveClientKeys() {
+    localStorage.setItem('clientKeys', JSON.stringify(clientKeys));
+}
 
-// // Function to save publicKey to localStorage
-// function savePublicKey() {
-//     localStorage.setItem('publicKey', publicKey);
-// }
+// Function to save publicKey to localStorage
+function savePublicKey() {
+    localStorage.setItem('publicKey', publicKey);
+}
 
-// // Function to load publicKey from localStorage
-// function loadPublicKey() {
-//     publicKey = localStorage.getItem('publicKey');
-// }
+// Function to load publicKey from localStorage
+function loadPublicKey() {
+    publicKey = localStorage.getItem('publicKey');
+}
 
-// // Function to save privateKey to localStorage
-// async function savePrivateKey() {
-//     const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", privateKey);
-//     const privateKeyBase64 = arrayBufferToBase64(exportedPrivateKey);
-//     const encryptedPrivateKey = await encryptPrivateKey(privateKeyBase64, 'your-password'); // Encrypt with a password
-//     localStorage.setItem('privateKey', encryptedPrivateKey);
-// }
+// Function to save privateKey to localStorage
+async function savePrivateKey() {
+    const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", privateKey);
+    const privateKeyBase64 = arrayBufferToBase64(exportedPrivateKey);
+    const encryptedPrivateKey = await encryptPrivateKey(privateKeyBase64, 'your-password'); // Encrypt with a password
+    localStorage.setItem('privateKey', encryptedPrivateKey);
+}
 
-// // Function to load privateKey from localStorage
-// async function loadPrivateKey() {
-//     const encryptedPrivateKey = localStorage.getItem('privateKey');
-//     if (encryptedPrivateKey) {
-//         const privateKeyBase64 = await decryptPrivateKey(encryptedPrivateKey, 'your-password'); // Decrypt with a password
-//         const privateKeyArrayBuffer = base64ToArrayBuffer(privateKeyBase64);
-//         privateKey = await window.crypto.subtle.importKey(
-//             "pkcs8",
-//             privateKeyArrayBuffer,
-//             {
-//                 name: "RSA-OAEP",
-//                 hash: "SHA-256"
-//             },
-//             true,
-//             ["decrypt"]
-//         );
-//         console.log("Private key successfully loaded.");
-//     } else {
-//         //console.error("No private key found in localStorage.");
-//         console.log("No private key found in localStorage. fresh login");
-//     }
-// }
+// Function to load privateKey from localStorage
+async function loadPrivateKey() {
+    const encryptedPrivateKey = localStorage.getItem('privateKey');
+    if (encryptedPrivateKey) {
+        const privateKeyBase64 = await decryptPrivateKey(encryptedPrivateKey, 'your-password'); // Decrypt with a password
+        const privateKeyArrayBuffer = base64ToArrayBuffer(privateKeyBase64);
+        privateKey = await window.crypto.subtle.importKey(
+            "pkcs8",
+            privateKeyArrayBuffer,
+            {
+                name: "RSA-OAEP",
+                hash: "SHA-256"
+            },
+            true,
+            ["decrypt"]
+        );
+        console.log("Private key successfully loaded.");
+    } else {
+        console.error("No private key found in localStorage.");
+    }
+}
 
-// // Function to encrypt the private key
-// async function encryptPrivateKey(privateKeyBase64, password) {
-//     const passwordKey = await getPasswordKey(password);
-//     const iv = window.crypto.getRandomValues(new Uint8Array(12));
-//     const encryptedContent = await window.crypto.subtle.encrypt(
-//         {
-//             name: "AES-GCM",
-//             iv: iv
-//         },
-//         passwordKey,
-//         new TextEncoder().encode(privateKeyBase64)
-//     );
-//     const encryptedContentArr = new Uint8Array(encryptedContent);
-//     const buff = new Uint8Array(iv.byteLength + encryptedContentArr.byteLength);
-//     buff.set(iv, 0);
-//     buff.set(encryptedContentArr, iv.byteLength);
-//     return arrayBufferToBase64(buff);
-// }
+// Function to encrypt the private key
+async function encryptPrivateKey(privateKeyBase64, password) {
+    const passwordKey = await getPasswordKey(password);
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encryptedContent = await window.crypto.subtle.encrypt(
+        {
+            name: "AES-GCM",
+            iv: iv
+        },
+        passwordKey,
+        new TextEncoder().encode(privateKeyBase64)
+    );
+    const encryptedContentArr = new Uint8Array(encryptedContent);
+    const buff = new Uint8Array(iv.byteLength + encryptedContentArr.byteLength);
+    buff.set(iv, 0);
+    buff.set(encryptedContentArr, iv.byteLength);
+    return arrayBufferToBase64(buff);
+}
 
-// // Function to decrypt the private key
-// async function decryptPrivateKey(encryptedPrivateKeyBase64, password) {
-//     const encryptedPrivateKeyBuff = base64ToArrayBuffer(encryptedPrivateKeyBase64);
-//     const iv = encryptedPrivateKeyBuff.slice(0, 12);
-//     const data = encryptedPrivateKeyBuff.slice(12);
-//     const passwordKey = await getPasswordKey(password);
-//     const decryptedContent = await window.crypto.subtle.decrypt(
-//         {
-//             name: "AES-GCM",
-//             iv: iv
-//         },
-//         passwordKey,
-//         data
-//     );
-//     return new TextDecoder().decode(decryptedContent);
-// }
+// Function to decrypt the private key
+async function decryptPrivateKey(encryptedPrivateKeyBase64, password) {
+    const encryptedPrivateKeyBuff = base64ToArrayBuffer(encryptedPrivateKeyBase64);
+    const iv = encryptedPrivateKeyBuff.slice(0, 12);
+    const data = encryptedPrivateKeyBuff.slice(12);
+    const passwordKey = await getPasswordKey(password);
+    const decryptedContent = await window.crypto.subtle.decrypt(
+        {
+            name: "AES-GCM",
+            iv: iv
+        },
+        passwordKey,
+        data
+    );
+    return new TextDecoder().decode(decryptedContent);
+}
 
-// // Function to get a key from a password
-// async function getPasswordKey(password) {
-//     const enc = new TextEncoder();
-//     const keyMaterial = await window.crypto.subtle.importKey(
-//         "raw",
-//         enc.encode(password),
-//         { name: "PBKDF2" },
-//         false,
-//         ["deriveKey"]
-//     );
-//     return window.crypto.subtle.deriveKey(
-//         {
-//             name: "PBKDF2",
-//             salt: enc.encode("salt"), // Use a proper salt in production
-//             iterations: 100000,
-//             hash: "SHA-256"
-//         },
-//         keyMaterial,
-//         { name: "AES-GCM", length: 256 },
-//         false,
-//         ["encrypt", "decrypt"]
-//     );
-// }
+// Function to get a key from a password
+async function getPasswordKey(password) {
+    const enc = new TextEncoder();
+    const keyMaterial = await window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(password),
+        { name: "PBKDF2" },
+        false,
+        ["deriveKey"]
+    );
+    return window.crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt: enc.encode("salt"), // Use a proper salt in production
+            iterations: 100000,
+            hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+    );
+}
 
 // Function to handle form events
 document.addEventListener('DOMContentLoaded', function () {
@@ -159,10 +153,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-" + userData.Username;
 
     // Load privateKey and publicKey from localStorage
-    // await loadPrivateKey();
-    // loadPublicKey();
-
-    console.log("Logout----------------------------> ", userData.Username);
+    await loadPrivateKey();
+    loadPublicKey();
 
     // Re-establish connection using data from localStorage
     if (Object.keys(clientKeys).length > 0) {
@@ -174,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('email_send_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_recv"
-            //saveClientKeys();
+            saveClientKeys();
             loadConReceiveFriends();
             loadAvailableFriends();
         } catch (error) {
@@ -186,7 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('email_reply_notify', function (data) {
         try {
             clientKeys[data['sender']].status = "con_reply_recv";
-            //saveClientKeys();
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
         } catch (error) {
@@ -197,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('message', async (data) => {
         try {
 
-            if (chatClient != data["sender"]){
+            if (chatClient != data["sender"]) {
                 let ul = document.getElementById("chat-msg");
                 let li = document.createElement("li");
                 li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
@@ -210,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             isCurrentUser = false;
-            
+
             console.log("Sender------------", data["sender"]);
             console.log("Sender Encrypted Message------------", data["message"]);
 
@@ -247,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("-------end-------");
         }
         console.log('All users available ------ > ', clientKeys)
-        //saveClientKeys();
+        saveClientKeys();
         loadAvailableFriends();
     });
 
@@ -258,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
-            //saveClientKeys();
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
             loadAccepetdFriends();
@@ -275,74 +267,67 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('send').onclick = async () => {
         await sendMessage();
-        // socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        socket.emit('stop_typing', { sender: username, recipient: chatClient });
     };
 
     document.getElementById("message-input").addEventListener("keypress", async function (event) {
         if (event.key === "Enter") {
             await sendMessage();
         }
-        // console.log("Keypress detected, sending typing event");
-        // socket.emit('typing', { sender: username, recipient: chatClient });
+        console.log("Keypress detected, sending typing event");
+        socket.emit('typing', { sender: username, recipient: chatClient });
     });
 
-    // document.getElementById("message-input").addEventListener("keyup", function (event) {
-    //     if (event.key === "Enter") {
-    //         console.log("Enter key pressed, sending stop typing event");
-    //         // socket.emit('stop_typing', { sender: username, recipient: chatClient });
-    //     }
-    // });
+    document.getElementById("message-input").addEventListener("keyup", function (event) {
+        if (event.key === "Enter") {
+            console.log("Enter key pressed, sending stop typing event");
+            socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        }
+    });
 
-    // document.getElementById("message-input").addEventListener("blur", function () {
-    //     console.log("Input lost focus, sending stop typing event");
-    //     // socket.emit('stop_typing', { sender: username, recipient: chatClient });
-    // });
+    document.getElementById("message-input").addEventListener("blur", function () {
+        console.log("Input lost focus, sending stop typing event");
+        socket.emit('stop_typing', { sender: username, recipient: chatClient });
+    });
 
     document.getElementById('logout-btn').onclick = () => {
         socket.emit('logout', { user_name: username });
         localStorage.clear(); // Clear all local storage data
     };
 
-    // socket.on('typing', function (data) {
-    //     console.log("Received typing event from", data.sender);
-    //     const typingIndicator = document.getElementById("typing-indicator");
-    //     typingIndicator.textContent = data.sender + " is typing...";
-    // });
+    socket.on('typing', function (data) {
+        console.log("Received typing event from", data.sender);
+        const typingIndicator = document.getElementById("typing-indicator");
+        typingIndicator.textContent = data.sender + " is typing...";
+    });
 
-    // socket.on('stop_typing', function (data) {
-    //     console.log("Received stop typing event from", data.sender);
-    //     const typingIndicator = document.getElementById("typing-indicator");
-    //     typingIndicator.textContent = "";
-    // });
+    socket.on('stop_typing', function (data) {
+        console.log("Received stop typing event from", data.sender);
+        const typingIndicator = document.getElementById("typing-indicator");
+        typingIndicator.textContent = "";
+    });
 });
 
 
 async function initiateUser() {
     try {
         username = userData.Username;
-        console.log("Initiate user===============================>>",username)
+        console.log("Initiate user===============================>>", username)
 
-        // // Check if private key exists in localStorage
-        // const privateKeyBase64 = localStorage.getItem('privateKey');
-        // if (privateKeyBase64) {
-        //     await loadPrivateKey();
-        //     console.log("Using existing private key.");
-        // } else {
-        //     publicKey = await generateRSAKeyPair();
-        //     console.log("Generated new key pair.");
-        // }
+        // Check if private key exists in localStorage
+        const privateKeyBase64 = localStorage.getItem('privateKey');
+        if (privateKeyBase64) {
+            await loadPrivateKey();
+            console.log("Using existing private key.");
+        } else {
+            publicKey = await generateRSAKeyPair();
+            console.log("Generated new key pair.");
+        }
 
-        // // Load publicKey from localStorage
-        // loadPublicKey();
-
-        publicKey = await generateRSAKeyPair();
-        console.log("Generated new key pair.");
-        
+        // Load publicKey from localStorage
+        loadPublicKey();
 
         socket.connect();
-        //var socket = io.connect('wss://' + document.domain + ':' + location.port);
-            
-
         console.log('Username------->', userData.Username)
         console.log('Email------->', userData.Email)
         socket.on("connect", function () {
@@ -437,12 +422,33 @@ function OnAddParsePhaseClick(friendObj) {
     //console.log("OnAddParsePhaseClick----:");
     var parsePhase = document.getElementById("body_parsephase").value;
     console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
-    clientKeys[friendObj.username].publicKey = parsePhase;
-    document.getElementById('email_request_form').innerHTML = '';
-    document.getElementById('email_reply_form').innerHTML = '';
-    //saveClientKeys();
-    loadConReceiveFriends();
-    loadAccepetdFriends();
+
+    const hasColon = parsePhase.includes(':');
+
+    if (hasColon) {
+        const parts = parsePhase.split(/:(.+)/);
+
+        const parsePhaseUser = parts[0];
+        const parsePhasePublicKey = parts[1];
+
+        if (parsePhaseUser == friendObj.username) {
+            clientKeys[friendObj.username].publicKey = parsePhasePublicKey;
+            document.getElementById('email_request_form').innerHTML = '';
+            document.getElementById('email_reply_form').innerHTML = '';
+            saveClientKeys();
+            loadConReceiveFriends();
+            loadAccepetdFriends();
+        } else {
+            publicKeyLoadForm(friendObj,true,'Please Enter Correct Public Key')
+        }
+    } else {
+        publicKeyLoadForm(friendObj,true,'Please Enter Correct Public Key')
+    }
+    
+
+    
+
+
 }
 
 
@@ -511,7 +517,7 @@ function OnRequestSend() {
  */
 function loadRequest(obj, publicKey) {
     clientKeys[obj.username].status = "con_sent";
-    //saveClientKeys();
+    saveClientKeys();
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
     loadAvailableFriends();
     const formContent = `
@@ -549,24 +555,46 @@ function loadReply(obj, publicKey) {
         </div>
         `;
         clientKeys[obj.username].status = "accepted"
-        //saveClientKeys();
+        saveClientKeys();
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
         loadAccepetdFriends();
+
+        document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
-        formContent = `
+        publicKeyLoadForm(obj,false,'nil');
+        // formContent = `
+        // <div class="email-form-container">
+        //     <label for="body_parsephase">ParsePhase:</label>
+        //     <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
+        //     <p style="color: red;">{{ msg }}</p>
+        //     <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
+        // </div>
+        // `;
+        // if (clientKeys[obj.username].status == "con_reply_recv") {
+        //     clientKeys[obj.username].status = "accepted";
+        //     saveClientKeys();
+        // }
+    }
+
+    
+}
+
+function publicKeyLoadForm(obj,showMsg, msg = '') {
+    const conditionalP = showMsg ? `<p style="color: red;">${msg}</p>` : '';
+
+    formContent = `
         <div class="email-form-container">
             <label for="body_parsephase">ParsePhase:</label>
             <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
+            ${conditionalP}
             <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
         </div>
         `;
-        if (clientKeys[obj.username].status == "con_reply_recv") {
-            clientKeys[obj.username].status = "accepted";
-            //saveClientKeys();
-        }
+    if (clientKeys[obj.username].status == "con_reply_recv") {
+        clientKeys[obj.username].status = "accepted";
+        saveClientKeys();
     }
-
     document.getElementById('email_reply_form').innerHTML = formContent;
 }
 
@@ -606,17 +634,18 @@ async function generateRSAKeyPair() {
     );
 
     const publicKeyArrayBuffer = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-    const publicKeyBase64 = arrayBufferToBase64(publicKeyArrayBuffer);
+    const publicKeyBase64 = username + ':' + arrayBufferToBase64(publicKeyArrayBuffer);
+
 
     console.log("Generated Public Key (Base64):", publicKeyBase64);
     privateKey = keyPair.privateKey;
 
-    // // Save the private key to localStorage
-    // await savePrivateKey();
+    // Save the private key to localStorage
+    await savePrivateKey();
 
-    // // Save the public key to localStorage
-    // publicKey = publicKeyBase64;
-    // savePublicKey();
+    // Save the public key to localStorage
+    publicKey = publicKeyBase64;
+    savePublicKey();
 
     return publicKeyBase64;
 }
@@ -739,7 +768,7 @@ function confirmLogout() {
         }
     };
 
-    
+
 }
 
 function logout() {
@@ -748,7 +777,7 @@ function logout() {
         credentials: 'same-origin'
     }).then(response => {
         if (response.ok) {
-            //localStorage.clear(); // Clear all local storage data
+            localStorage.clear(); // Clear all local storage data
             window.location.href = '/';
         } else {
             console.error("Logout failed");
