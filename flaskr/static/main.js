@@ -58,7 +58,8 @@ async function loadPrivateKey() {
         );
         console.log("Private key successfully loaded.");
     } else {
-        console.error("No private key found in localStorage.");
+        //console.error("No private key found in localStorage.");
+        console.log("No private key found in localStorage. fresh login");
     }
 }
 
@@ -334,8 +335,8 @@ async function initiateUser() {
         loadPublicKey();
         
 
-        //socket.connect();
-        var socket = io.connect('wss://' + document.domain + ':' + location.port);
+        socket.connect();
+        //var socket = io.connect('wss://' + document.domain + ':' + location.port);
             
 
         console.log('Username------->', userData.Username)
