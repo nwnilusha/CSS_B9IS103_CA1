@@ -157,8 +157,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById("logout-btn").value = "Logout-" + userData.Username;
 
     // Load privateKey and publicKey from localStorage
-    //await loadPrivateKey();
-    //loadPublicKey();
+    await loadPrivateKey();
+    loadPublicKey();
 
     console.log("Logout----------------------------> ", userData.Username);
 
@@ -321,7 +321,7 @@ async function initiateUser() {
         console.log("Initiate user===============================>>",username)
 
         // Check if private key exists in localStorage
-        /*const privateKeyBase64 = localStorage.getItem('privateKey');
+        const privateKeyBase64 = localStorage.getItem('privateKey');
         if (privateKeyBase64) {
             await loadPrivateKey();
             console.log("Using existing private key.");
@@ -332,7 +332,7 @@ async function initiateUser() {
 
         // Load publicKey from localStorage
         loadPublicKey();
-        */
+        
 
         //socket.connect();
         var socket = io.connect('wss://' + document.domain + ':' + location.port);
