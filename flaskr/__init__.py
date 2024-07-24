@@ -13,6 +13,10 @@ from flaskr.config import Config
 from flaskr.db import Database
 from flaskr.db import DatabaseSQLite
 
+from gevent import monkey
+monkey.patch_all()
+
+
 clients = {}
 clientsSID = {}
 allClients = {}
@@ -28,6 +32,8 @@ def generate_secret_key(length=32):
 app = Flask(__name__)
 app.config.from_object(Config)
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 def create_app():
     #app = Flask(__name__)
