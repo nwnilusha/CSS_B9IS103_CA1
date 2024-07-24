@@ -54,7 +54,8 @@ async function loadPrivateKey() {
         );
         console.log("Private key successfully loaded.");
     } else {
-        console.error("No private key found in localStorage.");
+        //console.error("No private key found in localStorage.");
+        console.log("No private key found in localStorage. fresh login");
     }
 }
 
@@ -439,14 +440,14 @@ function OnAddParsePhaseClick(friendObj) {
             loadConReceiveFriends();
             loadAccepetdFriends();
         } else {
-            publicKeyLoadForm(friendObj,true,'Please Enter Correct Public Key')
+            publicKeyLoadForm(friendObj, true, 'Please Enter Correct Public Key')
         }
     } else {
-        publicKeyLoadForm(friendObj,true,'Please Enter Correct Public Key')
+        publicKeyLoadForm(friendObj, true, 'Please Enter Correct Public Key')
     }
-    
 
-    
+
+
 
 
 }
@@ -562,7 +563,7 @@ function loadReply(obj, publicKey) {
 
         document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
-        publicKeyLoadForm(obj,false,'nil');
+        publicKeyLoadForm(obj, false, 'nil');
         // formContent = `
         // <div class="email-form-container">
         //     <label for="body_parsephase">ParsePhase:</label>
@@ -577,10 +578,10 @@ function loadReply(obj, publicKey) {
         // }
     }
 
-    
+
 }
 
-function publicKeyLoadForm(obj,showMsg, msg = '') {
+function publicKeyLoadForm(obj, showMsg, msg = '') {
     const conditionalP = showMsg ? `<p style="color: red;">${msg}</p>` : '';
 
     formContent = `
