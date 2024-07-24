@@ -1,8 +1,4 @@
-//const socket = io({ autoConnect: false });
-//var socket = io.connect('wss://' + document.domain + ':' + location.port);
-//var socket = io.connect('https://gobuzz-c5a12ea3ac14.herokuapp.com/');
-var socket = io.connect();            
-
+const socket = io({ autoConnect: false });
 let privateKey, publicKey;
 /**
  * Data structure to store client data
@@ -58,8 +54,7 @@ async function loadPrivateKey() {
         );
         console.log("Private key successfully loaded.");
     } else {
-        //console.error("No private key found in localStorage.");
-        console.log("No private key found in localStorage. fresh login");
+        console.error("No private key found in localStorage.");
     }
 }
 
@@ -161,8 +156,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadPrivateKey();
     loadPublicKey();
 
-    console.log("Logout----------------------------> ", userData.Username);
-
     // Re-establish connection using data from localStorage
     if (Object.keys(clientKeys).length > 0) {
         loadAvailableFriends();
@@ -196,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('message', async (data) => {
         try {
 
-            if (chatClient != data["sender"]){
+            if (chatClient != data["sender"]) {
                 let ul = document.getElementById("chat-msg");
                 let li = document.createElement("li");
                 li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
@@ -209,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             isCurrentUser = false;
-            
+
             console.log("Sender------------", data["sender"]);
             console.log("Sender Encrypted Message------------", data["message"]);
 
@@ -246,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("-------end-------");
         }
         console.log('All users available ------ > ', clientKeys)
-        //saveClientKeys();
+        saveClientKeys();
         loadAvailableFriends();
     });
 
@@ -257,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
-            //saveClientKeys();
+            saveClientKeys();
             loadAvailableFriends();
             loadConReceiveFriends();
             loadAccepetdFriends();
@@ -319,7 +312,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initiateUser() {
     try {
         username = userData.Username;
-        console.log("Initiate user===============================>>",username)
+        console.log("Initiate user===============================>>", username)
 
         // Check if private key exists in localStorage
         const privateKeyBase64 = localStorage.getItem('privateKey');
@@ -333,12 +326,8 @@ async function initiateUser() {
 
         // Load publicKey from localStorage
         loadPublicKey();
-        
 
         socket.connect();
-        //var socket = io.connect('wss://' + document.domain + ':' + location.port);
-            
-
         console.log('Username------->', userData.Username)
         console.log('Email------->', userData.Email)
         socket.on("connect", function () {
@@ -433,12 +422,33 @@ function OnAddParsePhaseClick(friendObj) {
     //console.log("OnAddParsePhaseClick----:");
     var parsePhase = document.getElementById("body_parsephase").value;
     console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
-    clientKeys[friendObj.username].publicKey = parsePhase;
-    document.getElementById('email_request_form').innerHTML = '';
-    document.getElementById('email_reply_form').innerHTML = '';
-    saveClientKeys();
-    loadConReceiveFriends();
-    loadAccepetdFriends();
+
+    const hasColon = parsePhase.includes(':');
+
+    if (hasColon) {
+        const parts = parsePhase.split(/:(.+)/);
+
+        const parsePhaseUser = parts[0];
+        const parsePhasePublicKey = parts[1];
+
+        if (parsePhaseUser == friendObj.username) {
+            clientKeys[friendObj.username].publicKey = parsePhasePublicKey;
+            document.getElementById('email_request_form').innerHTML = '';
+            document.getElementById('email_reply_form').innerHTML = '';
+            saveClientKeys();
+            loadConReceiveFriends();
+            loadAccepetdFriends();
+        } else {
+            publicKeyLoadForm(friendObj,true,'Please Enter Correct Public Key')
+        }
+    } else {
+        publicKeyLoadForm(friendObj,true,'Please Enter Correct Public Key')
+    }
+    
+
+    
+
+
 }
 
 
@@ -549,20 +559,42 @@ function loadReply(obj, publicKey) {
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
         loadAccepetdFriends();
+
+        document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
-        formContent = `
+        publicKeyLoadForm(obj,false,'nil');
+        // formContent = `
+        // <div class="email-form-container">
+        //     <label for="body_parsephase">ParsePhase:</label>
+        //     <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
+        //     <p style="color: red;">{{ msg }}</p>
+        //     <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
+        // </div>
+        // `;
+        // if (clientKeys[obj.username].status == "con_reply_recv") {
+        //     clientKeys[obj.username].status = "accepted";
+        //     saveClientKeys();
+        // }
+    }
+
+    
+}
+
+function publicKeyLoadForm(obj,showMsg, msg = '') {
+    const conditionalP = showMsg ? `<p style="color: red;">${msg}</p>` : '';
+
+    formContent = `
         <div class="email-form-container">
             <label for="body_parsephase">ParsePhase:</label>
             <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
+            ${conditionalP}
             <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
         </div>
         `;
-        if (clientKeys[obj.username].status == "con_reply_recv") {
-            clientKeys[obj.username].status = "accepted";
-            saveClientKeys();
-        }
+    if (clientKeys[obj.username].status == "con_reply_recv") {
+        clientKeys[obj.username].status = "accepted";
+        saveClientKeys();
     }
-
     document.getElementById('email_reply_form').innerHTML = formContent;
 }
 
@@ -602,7 +634,8 @@ async function generateRSAKeyPair() {
     );
 
     const publicKeyArrayBuffer = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-    const publicKeyBase64 = arrayBufferToBase64(publicKeyArrayBuffer);
+    const publicKeyBase64 = username + ':' + arrayBufferToBase64(publicKeyArrayBuffer);
+
 
     console.log("Generated Public Key (Base64):", publicKeyBase64);
     privateKey = keyPair.privateKey;
@@ -735,7 +768,7 @@ function confirmLogout() {
         }
     };
 
-    
+
 }
 
 function logout() {
