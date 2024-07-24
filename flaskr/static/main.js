@@ -1,7 +1,8 @@
 //const socket = io({ autoConnect: false });
 //var socket = io.connect('wss://' + document.domain + ':' + location.port);
-var socket = io.connect('https://gobuzz-c5a12ea3ac14.herokuapp.com/');
-            
+//var socket = io.connect('https://gobuzz-c5a12ea3ac14.herokuapp.com/');
+var socket = io.connect();            
+
 let privateKey, publicKey;
 /**
  * Data structure to store client data
