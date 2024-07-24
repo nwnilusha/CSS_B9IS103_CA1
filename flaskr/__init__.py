@@ -26,11 +26,17 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-socketio = SocketIO()
+#socketio = SocketIO()
+#socketio = SocketIO(app, async_mode='eventlet')
+#help avoid CORS issues
+app = Flask(__name__)
+app.config.from_object(Config)
+#socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 def create_app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
+    #app = Flask(__name__)
+    #app.config.from_object(Config)
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
