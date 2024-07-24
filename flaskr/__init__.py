@@ -13,10 +13,6 @@ from flaskr.config import Config
 from flaskr.db import Database
 from flaskr.db import DatabaseSQLite
 
-from gevent import monkey
-monkey.patch_all()
-
-
 clients = {}
 clientsSID = {}
 allClients = {}
@@ -26,17 +22,11 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-#socketio = SocketIO()
-#socketio = SocketIO(app, async_mode='eventlet')
-#help avoid CORS issues
-app = Flask(__name__)
-app.config.from_object(Config)
-#socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
-socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
+socketio = SocketIO()
 
 def create_app():
-    #app = Flask(__name__)
-    #app.config.from_object(Config)
+    app = Flask(__name__)
+    app.config.from_object(Config)
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
@@ -145,10 +135,13 @@ def create_app():
                     if result:
                         user_data = result[0]
                         if check_password_hash(user_data['password'], password):
-                            session['loggedin'] = True
-                            session['username'] = user_data['username']
-                            session['email'] = user_data['email']
-                            return redirect(url_for('index'))
+                            if user_data['emailVerified'] == 1 :
+                                session['loggedin'] = True
+                                session['username'] = user_data['username']
+                                session['email'] = user_data['email']
+                                return redirect(url_for('index'))
+                            else:
+                                 msg = "Email Verification Failed"
                         else:
                             msg = "Incorrect Username or Password"
                     else:
@@ -237,8 +230,8 @@ def create_app():
                         msg = 'Username or Email already exists. Please choose a different username or email.'
                     else:
                         if app.config['DB_TYPE'] == 'SQLITE':
-                            insert_query = 'INSERT INTO USER (username, email, password) VALUES (?, ?, ?)'
-                            result = db.execute_vquery(insert_query, (username, email, hashed_password,))
+                            insert_query = 'INSERT INTO USER (username, email, password, emailVerified) VALUES (?, ?, ?, ?)'
+                            result = db.execute_vquery(insert_query, (username, email, hashed_password,0,))
                         else:
                             insert_query = 'INSERT INTO USER (username, email, password) VALUES (%s, %s, %s)'
                             result = db.execute_vquery(insert_query, username, email, hashed_password)
@@ -282,11 +275,11 @@ def create_app():
                 result = db.fetch_query(select_query, (email,))
             
             if result:
-                user_data = result[0]
-                session['loggedin'] = True
-                session['username'] = user_data['username']
-                session['email'] = user_data['email']
-                return redirect(url_for('index'))
+                if app.config['DB_TYPE'] == 'SQLITE':
+                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
+                    result = db.execute_vquery(update_query, (email,))
+
+                return redirect(url_for('login', message='Verification successful! Please log in.'))
             else:
                 return render_template('verify_email.html', message='Verification failed. User not found.')
         except SignatureExpired:
@@ -410,28 +403,28 @@ def create_app():
         session.pop('google_oauth_state', None)
         return redirect(url_for('login'))
     
-    # # Typing Indicator in the server side
-    # @socketio.on('typing')
-    # def handle_typing(data):
-    #     try:
-    #         #print(f"Typing event from {data['sender']} to {data['recipient']}")
-    #         recipient = data['recipient']
-    #         if recipient in clientsSID:
-    #             recipient_sid = clientsSID[recipient]
-    #             emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
-    #     except Exception as ex:
-    #         print(f"An error occurred: {ex}")
+    # Typing Indicator in the server side
+    @socketio.on('typing')
+    def handle_typing(data):
+        try:
+            #print(f"Typing event from {data['sender']} to {data['recipient']}")
+            recipient = data['recipient']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
 
-    # @socketio.on('stop_typing')
-    # def handle_stop_typing(data):
-    #     try:
-    #         #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
-    #         recipient = data['recipient']
-    #         if recipient in clientsSID:
-    #             recipient_sid = clientsSID[recipient]
-    #             emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
-    #     except Exception as ex:
-    #         print(f"An error occurred: {ex}")
+    @socketio.on('stop_typing')
+    def handle_stop_typing(data):
+        try:
+            #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
+            recipient = data['recipient']
+            if recipient in clientsSID:
+                recipient_sid = clientsSID[recipient]
+                emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
+        except Exception as ex:
+            print(f"An error occurred: {ex}")
 
 
 
@@ -479,8 +472,6 @@ def create_app():
 
     return app
 
-
-app = create_app()
-#if __name__ == "__main__":
-#    app = create_app()
-#    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+if __name__ == "__main__":
+    app = create_app()
+    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
