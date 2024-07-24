@@ -1,3 +1,5 @@
+from gevent import monkey
+monkey.patch_all()
 import os
 import secrets
 import string
@@ -12,9 +14,6 @@ from flask_mail import Mail, Message
 from flaskr.config import Config
 from flaskr.db import Database
 from flaskr.db import DatabaseSQLite
-
-from gevent import monkey
-monkey.patch_all()
 
 
 clients = {}
