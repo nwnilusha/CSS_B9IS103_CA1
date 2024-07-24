@@ -31,8 +31,7 @@ def generate_secret_key(length=32):
 #help avoid CORS issues
 app = Flask(__name__)
 app.config.from_object(Config)
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
-
+#socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 def create_app():
