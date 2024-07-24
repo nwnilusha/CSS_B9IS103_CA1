@@ -22,18 +22,12 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-socketio = SocketIO()
-
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-    #app.config['MYSQL_HOST'] = 'localhost'
-    #app.config['MYSQL_USER'] = 'root'
-    #app.config['MYSQL_PASSWORD'] = 'password'
-    #app.config['MYSQL_DB'] = 'GOBUZZ'
+    socketio = SocketIO(app, cors_allowed_origins="*")
 
     # create the db config
     if app.config['DB_TYPE'] == 'MYSQL':    

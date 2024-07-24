@@ -9,7 +9,8 @@ let privateKey, publicKey;
  * 3. con_recv
  * 4. available
  */
-var clientKeys = JSON.parse(localStorage.getItem('clientKeys')) || {};
+// var clientKeys = JSON.parse(localStorage.getItem('clientKeys')) || {};
+var clientKeys = {};
 var username, chatClient, chatClientPK;
 var isCurrentUser = true;
 
@@ -596,12 +597,12 @@ async function generateRSAKeyPair() {
     console.log("Generated Public Key (Base64):", publicKeyBase64);
     privateKey = keyPair.privateKey;
 
-    // Save the private key to localStorage
-    await savePrivateKey();
+    // // Save the private key to localStorage
+    // await savePrivateKey();
 
-    // Save the public key to localStorage
-    publicKey = publicKeyBase64;
-    savePublicKey();
+    // // Save the public key to localStorage
+    // publicKey = publicKeyBase64;
+    // savePublicKey();
 
     return publicKeyBase64;
 }
@@ -733,7 +734,7 @@ function logout() {
         credentials: 'same-origin'
     }).then(response => {
         if (response.ok) {
-            localStorage.clear(); // Clear all local storage data
+            //localStorage.clear(); // Clear all local storage data
             window.location.href = '/';
         } else {
             console.error("Logout failed");
