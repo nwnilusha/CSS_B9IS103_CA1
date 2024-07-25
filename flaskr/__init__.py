@@ -33,6 +33,13 @@ app = Flask(__name__)
 app.config.from_object(Config)
 #socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
+#socketio = SocketIO()
+#socketio = SocketIO(app, async_mode='eventlet')
+#help avoid CORS issues
+app = Flask(__name__)
+app.config.from_object(Config)
+#socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 def create_app():
     #app = Flask(__name__)
