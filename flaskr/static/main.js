@@ -446,10 +446,6 @@ function OnAddParsePhaseClick(friendObj) {
         publicKeyLoadForm(friendObj, true, 'Please Enter Correct Public Key')
     }
 
-
-
-
-
 }
 
 
@@ -496,7 +492,11 @@ function loadAccepetdFriends() {
  * Button click function for sending connection request via an email
  * this will open the email client for sending the email.
  */
-function OnRequestSend() {
+function OnRequestSend(obj,status) {
+    if (status == "con_sent"){
+        clientKeys[obj.username].status = "con_sent";
+        loadAvailableFriends();
+    }
 
     document.getElementById('email_request_form').innerHTML = '';
     document.getElementById('email_reply_form').innerHTML = '';
@@ -506,10 +506,10 @@ function OnRequestSend() {
  * Function to load the email request
  */
 function loadRequest(obj, publicKey) {
-    clientKeys[obj.username].status = "con_sent";
+    //clientKeys[obj.username].status = "con_sent";
     saveClientKeys();
     socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
-    loadAvailableFriends();
+    //loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
@@ -518,7 +518,7 @@ function loadRequest(obj, publicKey) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+            <button type="button" onclick="OnRequestSend(${obj,"con_sent"})">Request To Connect</button>
         </div>
     `;
     // load to the div_connect_request
@@ -541,7 +541,7 @@ function loadReply(obj, publicKey) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+            <button type="button" onclick="OnRequestSend(${obj},"con_recv")">Request To Connect</button>
         </div>
         `;
         clientKeys[obj.username].status = "accepted"
@@ -554,8 +554,6 @@ function loadReply(obj, publicKey) {
     } else {
         publicKeyLoadForm(obj, false, 'nil');
     }
-
-
 }
 
 function publicKeyLoadForm(obj, showMsg, msg = '') {
