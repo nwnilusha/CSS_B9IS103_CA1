@@ -498,17 +498,6 @@ function loadAccepetdFriends() {
  */
 function OnRequestSend() {
 
-    // // Get field data for email.
-    // const email = document.getElementById("email").value;
-    // const subject = document.getElementById('subject').value;
-    // const body = document.getElementById('body').value;
-
-    // // Create mailto link
-    // const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-
-    // // Open mailto link
-    // window.location.href = mailtoLink;
-
     document.getElementById('email_request_form').innerHTML = '';
     document.getElementById('email_reply_form').innerHTML = '';
 }
@@ -564,18 +553,6 @@ function loadReply(obj, publicKey) {
         document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
         publicKeyLoadForm(obj, false, 'nil');
-        // formContent = `
-        // <div class="email-form-container">
-        //     <label for="body_parsephase">ParsePhase:</label>
-        //     <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
-        //     <p style="color: red;">{{ msg }}</p>
-        //     <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
-        // </div>
-        // `;
-        // if (clientKeys[obj.username].status == "con_reply_recv") {
-        //     clientKeys[obj.username].status = "accepted";
-        //     saveClientKeys();
-        // }
     }
 
 
