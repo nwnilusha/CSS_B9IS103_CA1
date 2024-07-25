@@ -419,6 +419,7 @@ def create_app():
             recipient = data['recipient']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
+                print(f'Client typing------->{clients[request.sid]}')
                 emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
@@ -430,6 +431,7 @@ def create_app():
             recipient = data['recipient']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
+                print(f'Client typing------->{clients[request.sid]}')
                 emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
