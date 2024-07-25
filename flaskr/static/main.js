@@ -493,6 +493,8 @@ function loadAccepetdFriends() {
  * this will open the email client for sending the email.
  */
 function OnRequestSend(obj,status) {
+
+    console.log('Status OnRequestSend------->',status)
     if (status == "con_sent"){
         clientKeys[obj.username].status = "con_sent";
         loadAvailableFriends();
@@ -518,7 +520,7 @@ function loadRequest(obj, publicKey) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend(${obj,"con_sent"})">Request To Connect</button>
+            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_sent")'>Request To Connect</button>
         </div>
     `;
     // load to the div_connect_request
@@ -541,7 +543,7 @@ function loadReply(obj, publicKey) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend(${obj},"con_recv")">Request To Connect</button>
+            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_recv")'>Request To Connect</button>
         </div>
         `;
         clientKeys[obj.username].status = "accepted"
