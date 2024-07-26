@@ -289,10 +289,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById("message-input").addEventListener("keypress", async function (event) {
         if (event.key === "Enter") {
-            await sendMessage();
-        }
-        console.log("Keypress detected, sending typing event");
+            if (chatClient != null){
+                displaySelectFriendMessage(false);
+                await sendMessage();
+                socket.emit('stop_typing', { sender: username, recipient: chatClient });
+            } else {
+                displaySelectFriendMessage(true);
+            }
+        } else {
+            console.log("Keypress detected, sending typing event");
         socket.emit('typing', { sender: username, recipient: chatClient });
+        }
+        
     });
 
     document.getElementById("message-input").addEventListener("keyup", function (event) {
@@ -739,7 +747,7 @@ function displaySelectFriendMessage(visibility) {
             selectFriend.appendChild(message);
         }
     } else {
-        const message = typingIndicator.querySelector('p');
+        const message = selectFriend.querySelector('p');
         if (message) {
             selectFriend.removeChild(message);
         }
