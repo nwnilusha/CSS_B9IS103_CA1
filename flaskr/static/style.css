@@ -309,6 +309,12 @@ body {
     text-align: center;
 }
 
+.logout_user {
+    color: red;
+    font-weight: bold;
+    text-align: center;
+}
+
 
 .confirm_modal {
     display: none; /* Hidden by default */

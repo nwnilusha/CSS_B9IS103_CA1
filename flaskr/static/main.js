@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
             li.appendChild(document.createTextNode(`${data['logoutUser']} - User Logout`));
-            li.classList.add("center_user");
+            li.classList.add("logout_user");
             ul.appendChild(li);
             ul.scrollTop = ul.scrollHeight;
 
