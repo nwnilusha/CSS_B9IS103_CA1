@@ -248,6 +248,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         var clientKey = data['logoutUser']
         console.log('User logout========>', clientKey)
         console.log('Client keys========>', clientKeys)
+        if (chatClient == data['logoutUser']) {
+            chatClient = null;
+        }
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
@@ -446,10 +449,6 @@ function OnAddParsePhaseClick(friendObj) {
         publicKeyLoadForm(friendObj, true, 'Please Enter Correct Public Key')
     }
 
-
-
-
-
 }
 
 
@@ -496,18 +495,21 @@ function loadAccepetdFriends() {
  * Button click function for sending connection request via an email
  * this will open the email client for sending the email.
  */
-function OnRequestSend() {
+function OnRequestSend(obj,status) {
 
-    // // Get field data for email.
-    // const email = document.getElementById("email").value;
-    // const subject = document.getElementById('subject').value;
-    // const body = document.getElementById('body').value;
-
-    // // Create mailto link
-    // const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-
-    // // Open mailto link
-    // window.location.href = mailtoLink;
+    console.log('Status OnRequestSend------->',status)
+    if (status == "con_sent"){
+        clientKeys[obj.username].status = "con_sent";
+        saveClientKeys();
+        socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+        loadAvailableFriends();
+    } else if (status == "con_recv") {
+        clientKeys[obj.username].status = "accepted"
+        saveClientKeys();
+        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        loadConReceiveFriends();
+        loadAccepetdFriends();
+    }
 
     document.getElementById('email_request_form').innerHTML = '';
     document.getElementById('email_reply_form').innerHTML = '';
@@ -517,10 +519,6 @@ function OnRequestSend() {
  * Function to load the email request
  */
 function loadRequest(obj, publicKey) {
-    clientKeys[obj.username].status = "con_sent";
-    saveClientKeys();
-    socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
-    loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
@@ -529,11 +527,9 @@ function loadRequest(obj, publicKey) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_sent")'>Request To Connect</button>
         </div>
     `;
-    // load to the div_connect_request
-    //document.getElementById('div_connect_request').innerHTML = formContent;
     document.getElementById('email_request_form').innerHTML = formContent;
 }
 
@@ -552,33 +548,14 @@ function loadReply(obj, publicKey) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_recv")'>Request To Connect</button>
         </div>
         `;
-        clientKeys[obj.username].status = "accepted"
-        saveClientKeys();
-        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-        loadConReceiveFriends();
-        loadAccepetdFriends();
 
         document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
         publicKeyLoadForm(obj, false, 'nil');
-        // formContent = `
-        // <div class="email-form-container">
-        //     <label for="body_parsephase">ParsePhase:</label>
-        //     <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
-        //     <p style="color: red;">{{ msg }}</p>
-        //     <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
-        // </div>
-        // `;
-        // if (clientKeys[obj.username].status == "con_reply_recv") {
-        //     clientKeys[obj.username].status = "accepted";
-        //     saveClientKeys();
-        // }
     }
-
-
 }
 
 function publicKeyLoadForm(obj, showMsg, msg = '') {
