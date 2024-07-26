@@ -286,6 +286,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         
     };
 
+    document.getElementById('clearHistory').onclick = async () => {
+        let ul = document.getElementById("chat-msg");
+        ul.innerHTML = ""
+    };
+
     document.getElementById("message-input").addEventListener("keypress", async function (event) {
         if (event.key === "Enter") {
             if (chatClient != null){
@@ -649,6 +654,13 @@ async function generateRSAKeyPair() {
     return publicKeyBase64;
 }
 
+async function generateSHA256Hash(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
 
 async function encryptMessage(publicKeyBase64, message) {
     try {

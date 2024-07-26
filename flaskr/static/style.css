@@ -444,6 +444,16 @@ body {
     background-color: #0056b3;
 }
 
+.clearHistory {
+    padding: 10px 20px;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
 /** tyling for tab menu */
 .tab {
     overflow: hidden;
