@@ -51,15 +51,6 @@ body {
     background-color: #0056b3;
 }
 
-/* .chat-container {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    background-color: #fff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-} */
-
 .chat-header {
     display: flex;
     justify-content: space-between;
@@ -298,7 +289,7 @@ body {
 
 #chat-msg li.left-align {
     text-align: left;
-    background-color: #f1f1f1;
+    background-color: #aeabab;
 }
 
 #chat-msg li.right-align {
@@ -314,6 +305,12 @@ body {
 
 .center_user {
     color: green;
+    font-weight: bold;
+    text-align: center;
+}
+
+.logout_user {
+    color: red;
     font-weight: bold;
     text-align: center;
 }
