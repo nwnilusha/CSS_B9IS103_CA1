@@ -277,6 +277,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('send').onclick = async () => {
+        if (chatClient != null){
+            displaySelectFriendMessage();
+        }
         await sendMessage();
         socket.emit('stop_typing', { sender: username, recipient: chatClient });
     };
@@ -721,6 +724,14 @@ function arrayBufferToBase64(buffer) {
 function isBase64(str) {
     const base64Pattern = /^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/;
     return base64Pattern.test(str);
+}
+
+function displaySelectFriendMessage() {
+    const typingIndicator = document.getElementById('select-friend');
+    const message = document.createElement('p');
+    message.style.color = 'red';
+    message.textContent = 'Please select a friend to chat';
+    typingIndicator.appendChild(message);
 }
 
 function confirmLogout() {
