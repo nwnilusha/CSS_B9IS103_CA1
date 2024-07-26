@@ -107,7 +107,7 @@ async function getPasswordKey(password) {
     return window.crypto.subtle.deriveKey(
         {
             name: "PBKDF2",
-            salt: enc.encode("salt"), // Use a proper salt in production
+            salt: enc.encode("salt"), 
             iterations: 100000,
             hash: "SHA-256"
         },
@@ -393,13 +393,7 @@ function loadAvailableFriends() {
                 <div class="last-active" id="last-active-${key}"></div>
                 <div class="action"><input type="button" style="background-color:rgb(196, 128, 32);" value="Invitation Sent" disabled></div>
             `;
-        } else if (user['status'] == 'available') {
-            /*li.innerHTML = `
-                <div class="status-indicator"></div>
-                <div class="username">${key}</div>
-                <div class="last-active" id="last-active-${key}"></div>
-                <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)}, "${publicKey}")'></div>
-            `;*/            
+        } else if (user['status'] == 'available') {            
             console.log("Public key---------------> "+publicKey);
             li.innerHTML = `
                 <div class="status-indicator"></div>
@@ -443,12 +437,6 @@ function loadConReceiveFriends() {
                 <div class="last-active" id="last-active-${key}"></div>
                 <div class="action"><input type="button" name="add_friend" value="Send Confirmation" style="background-color:rgb(196, 128, 32);" onclick='loadReply(${JSON.stringify(user)}, "${publicKey}")'></div>
             `;
-            /*li.innerHTML = `
-                <div class="status-indicator"></div>
-                <div class="username">${key}</div>
-                <div class="last-active" id="last-active-${key}"></div>
-                <div class="action"><input type="button" name="add_friend" value="Send Confirmation" style="background-color:rgb(196, 128, 32);" onclick='openEmailClientWindow(${JSON.stringify(user)}, "${publicKey}")'></div>
-            `;*/
 
         }
 
@@ -865,25 +853,12 @@ function loadReply(obj, publicKey) {
     let formContent;
 
     if (clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "") {
-        /*formContent = `
-        <div class="email-form-container">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="${obj.email}" required>            
-            <label for="subject">Subject:</label>
-            <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
-            <label for="body">Body:</label>
-            <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_recv")'>Request To Connect</button>
-        </div>
-        `;*/
         clientKeys[obj.username].status = "accepted"
         saveClientKeys();
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
         loadAccepetdFriends();
         openEmailClientWindow(obj.username, publicKey);
-
-        //document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
         publicKeyLoadForm(obj, false, 'nil');
     }
