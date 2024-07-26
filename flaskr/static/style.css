@@ -446,12 +446,18 @@ body {
 
 .clearHistory {
     padding: 10px 20px;
-    background-color: #007bff;
+    background-color: #1cb13c;
     border: none;
     border-radius: 5px;
     color: white;
     cursor: pointer;
     transition: background-color 0.3s;
+}
+
+.clearHistoryDiv {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /** tyling for tab menu */
