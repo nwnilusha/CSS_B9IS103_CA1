@@ -497,7 +497,15 @@ function OnRequestSend(obj,status) {
     console.log('Status OnRequestSend------->',status)
     if (status == "con_sent"){
         clientKeys[obj.username].status = "con_sent";
+        saveClientKeys();
+        socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
         loadAvailableFriends();
+    } else if (status == con_recv) {
+        clientKeys[obj.username].status = "accepted"
+        saveClientKeys();
+        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        loadConReceiveFriends();
+        loadAccepetdFriends();
     }
 
     document.getElementById('email_request_form').innerHTML = '';
@@ -509,8 +517,8 @@ function OnRequestSend(obj,status) {
  */
 function loadRequest(obj, publicKey) {
     //clientKeys[obj.username].status = "con_sent";
-    saveClientKeys();
-    socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+    // saveClientKeys();
+    // socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
     //loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
@@ -546,11 +554,11 @@ function loadReply(obj, publicKey) {
             <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_recv")'>Request To Connect</button>
         </div>
         `;
-        clientKeys[obj.username].status = "accepted"
-        saveClientKeys();
-        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-        loadConReceiveFriends();
-        loadAccepetdFriends();
+        // clientKeys[obj.username].status = "accepted"
+        // saveClientKeys();
+        // socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        // loadConReceiveFriends();
+        // loadAccepetdFriends();
 
         document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
