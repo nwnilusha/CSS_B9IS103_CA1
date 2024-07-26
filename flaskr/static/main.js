@@ -278,10 +278,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('send').onclick = async () => {
         if (chatClient != null){
-            displaySelectFriendMessage();
+            displaySelectFriendMessage(false);
+            await sendMessage();
+            socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        } else {
+            displaySelectFriendMessage(true);
         }
-        await sendMessage();
-        socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        
     };
 
     document.getElementById("message-input").addEventListener("keypress", async function (event) {
@@ -726,12 +729,22 @@ function isBase64(str) {
     return base64Pattern.test(str);
 }
 
-function displaySelectFriendMessage() {
-    const typingIndicator = document.getElementById('select-friend');
-    const message = document.createElement('p');
-    message.style.color = 'red';
-    message.textContent = 'Please select a friend to chat';
-    typingIndicator.appendChild(message);
+function displaySelectFriendMessage(visibility) {
+    const selectFriend = document.getElementById('select-friend');
+    if (visibility) {
+        if (!selectFriend.querySelector('p')) { // Check if the message is not already displayed
+            const message = document.createElement('p');
+            message.style.color = 'red';
+            message.textContent = 'Please select a friend to chat';
+            selectFriend.appendChild(message);
+        }
+    } else {
+        const message = typingIndicator.querySelector('p');
+        if (message) {
+            selectFriend.removeChild(message);
+        }
+    }
+    
 }
 
 function confirmLogout() {
