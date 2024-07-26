@@ -190,8 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('message', async (data) => {
         try {
 
+            let ul = document.getElementById("chat-msg");
             if (chatClient != data["sender"]) {
-                let ul = document.getElementById("chat-msg");
+                
                 let li = document.createElement("li");
                 li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
                 li.classList.add("center_user");
@@ -210,8 +211,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const decryptedMessage = await decryptMessage(privateKey, data["message"]);
             console.log("Sender Decrypted Message------------", decryptedMessage);
 
-
-            let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
             li.appendChild(document.createTextNode(data["sender"] + " : " + decryptedMessage));
             li.classList.add("left-align");
@@ -249,6 +248,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('User logout========>', clientKey)
         console.log('Client keys========>', clientKeys)
         if (chatClient == data['logoutUser']) {
+            let ul = document.getElementById("chat-msg");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(`${data['logoutUser']} - User Logout`));
+            li.classList.add("logout_user");
+            ul.appendChild(li);
+            ul.scrollTop = ul.scrollHeight;
+
             chatClient = null;
         }
         if (clientKey in clientKeys) {
@@ -270,16 +276,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('send').onclick = async () => {
-        await sendMessage();
-        socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        if (chatClient != null){
+            displaySelectFriendMessage(false);
+            await sendMessage();
+            socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        } else {
+            displaySelectFriendMessage(true);
+        }
+        
     };
 
     document.getElementById("message-input").addEventListener("keypress", async function (event) {
         if (event.key === "Enter") {
-            await sendMessage();
-        }
-        console.log("Keypress detected, sending typing event");
+            if (chatClient != null){
+                displaySelectFriendMessage(false);
+                await sendMessage();
+                socket.emit('stop_typing', { sender: username, recipient: chatClient });
+            } else {
+                displaySelectFriendMessage(true);
+            }
+        } else {
+            console.log("Keypress detected, sending typing event");
         socket.emit('typing', { sender: username, recipient: chatClient });
+        }
+        
     });
 
     document.getElementById("message-input").addEventListener("keyup", function (event) {
@@ -477,6 +497,7 @@ function loadAccepetdFriends() {
             li.addEventListener("click", () => {
                 chatClient = key;
                 chatClientPK = user.publicKey
+                displaySelectFriendMessage(false)
 
                 let ul = document.getElementById("chat-msg");
                 let li = document.createElement("li");
@@ -495,10 +516,10 @@ function loadAccepetdFriends() {
  * Button click function for sending connection request via an email
  * this will open the email client for sending the email.
  */
-function OnRequestSend(obj,status) {
+function OnRequestSend(obj, status) {
 
-    console.log('Status OnRequestSend------->',status)
-    if (status == "con_sent"){
+    console.log('Status OnRequestSend------->', status)
+    if (status == "con_sent") {
         clientKeys[obj.username].status = "con_sent";
         saveClientKeys();
         socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
@@ -714,6 +735,24 @@ function arrayBufferToBase64(buffer) {
 function isBase64(str) {
     const base64Pattern = /^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/;
     return base64Pattern.test(str);
+}
+
+function displaySelectFriendMessage(visibility) {
+    const selectFriend = document.getElementById('select-friend');
+    if (visibility) {
+        if (!selectFriend.querySelector('p')) { // Check if the message is not already displayed
+            const message = document.createElement('p');
+            message.style.color = 'red';
+            message.textContent = 'Please select a friend to chat';
+            selectFriend.appendChild(message);
+        }
+    } else {
+        const message = selectFriend.querySelector('p');
+        if (message) {
+            selectFriend.removeChild(message);
+        }
+    }
+    
 }
 
 function confirmLogout() {

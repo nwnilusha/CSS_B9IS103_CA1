@@ -289,7 +289,7 @@ body {
 
 #chat-msg li.left-align {
     text-align: left;
-    background-color: #f1f1f1;
+    background-color: #aeabab;
 }
 
 #chat-msg li.right-align {
@@ -305,6 +305,12 @@ body {
 
 .center_user {
     color: green;
+    font-weight: bold;
+    text-align: center;
+}
+
+.logout_user {
+    color: red;
     font-weight: bold;
     text-align: center;
 }
