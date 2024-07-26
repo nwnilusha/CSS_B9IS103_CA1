@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             let ul = document.getElementById("chat-msg");
             if (chatClient != data["sender"]) {
-                
+                displaySelectFriendMessage(false)
                 let li = document.createElement("li");
                 li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
                 li.classList.add("center_user");
