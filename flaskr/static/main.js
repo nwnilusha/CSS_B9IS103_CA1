@@ -498,6 +498,7 @@ function loadAccepetdFriends() {
             li.addEventListener("click", () => {
                 chatClient = key;
                 chatClientPK = user.publicKey
+                displaySelectFriendMessage(false)
 
                 let ul = document.getElementById("chat-msg");
                 let li = document.createElement("li");
