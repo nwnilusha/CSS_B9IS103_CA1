@@ -248,6 +248,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         var clientKey = data['logoutUser']
         console.log('User logout========>', clientKey)
         console.log('Client keys========>', clientKeys)
+        if (chatClient == data['logoutUser']) {
+            chatClient = null;
+        }
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
@@ -500,7 +503,7 @@ function OnRequestSend(obj,status) {
         saveClientKeys();
         socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
         loadAvailableFriends();
-    } else if (status == con_recv) {
+    } else if (status == "con_recv") {
         clientKeys[obj.username].status = "accepted"
         saveClientKeys();
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
