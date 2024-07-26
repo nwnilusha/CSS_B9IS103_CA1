@@ -512,16 +512,19 @@ function loadAccepetdFriends() {
             `;
 
             li.addEventListener("click", () => {
-                chatClient = key;
-                chatClientPK = user.publicKey
-                displaySelectFriendMessage(false)
+                if (chatClient != key){
+                    chatClient = key;
+                    chatClientPK = user.publicKey
+                    displaySelectFriendMessage(false)
 
-                let ul = document.getElementById("chat-msg");
-                let li = document.createElement("li");
-                li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
-                li.classList.add("center_user");
-                ul.appendChild(li);
-                ul.scrollTop = ul.scrollHeight;
+                    
+                    let ul = document.getElementById("chat-msg");
+                    let li = document.createElement("li");
+                    li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+                    li.classList.add("center_user");
+                    ul.appendChild(li);
+                    ul.scrollTop = ul.scrollHeight;
+                }
             });
         }
 
