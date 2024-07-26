@@ -249,6 +249,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('User logout========>', clientKey)
         console.log('Client keys========>', clientKeys)
         if (chatClient == data['logoutUser']) {
+            let ul = document.getElementById("chat-msg");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(`${data['logoutUser']} - User Logout`));
+            li.classList.add("center_user");
+            ul.appendChild(li);
+            ul.scrollTop = ul.scrollHeight;
+
             chatClient = null;
         }
         if (clientKey in clientKeys) {
@@ -495,10 +502,10 @@ function loadAccepetdFriends() {
  * Button click function for sending connection request via an email
  * this will open the email client for sending the email.
  */
-function OnRequestSend(obj,status) {
+function OnRequestSend(obj, status) {
 
-    console.log('Status OnRequestSend------->',status)
-    if (status == "con_sent"){
+    console.log('Status OnRequestSend------->', status)
+    if (status == "con_sent") {
         clientKeys[obj.username].status = "con_sent";
         saveClientKeys();
         socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
