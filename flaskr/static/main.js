@@ -519,10 +519,6 @@ function OnRequestSend(obj,status) {
  * Function to load the email request
  */
 function loadRequest(obj, publicKey) {
-    //clientKeys[obj.username].status = "con_sent";
-    // saveClientKeys();
-    // socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
-    //loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
@@ -534,8 +530,6 @@ function loadRequest(obj, publicKey) {
             <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_sent")'>Request To Connect</button>
         </div>
     `;
-    // load to the div_connect_request
-    //document.getElementById('div_connect_request').innerHTML = formContent;
     document.getElementById('email_request_form').innerHTML = formContent;
 }
 
@@ -557,11 +551,6 @@ function loadReply(obj, publicKey) {
             <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_recv")'>Request To Connect</button>
         </div>
         `;
-        // clientKeys[obj.username].status = "accepted"
-        // saveClientKeys();
-        // socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
-        // loadConReceiveFriends();
-        // loadAccepetdFriends();
 
         document.getElementById('email_reply_form').innerHTML = formContent;
     } else {
