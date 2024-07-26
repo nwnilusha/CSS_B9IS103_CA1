@@ -190,8 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     socket.on('message', async (data) => {
         try {
 
+            let ul = document.getElementById("chat-msg");
             if (chatClient != data["sender"]) {
-                let ul = document.getElementById("chat-msg");
+                
                 let li = document.createElement("li");
                 li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
                 li.classList.add("center_user");
@@ -210,8 +211,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             const decryptedMessage = await decryptMessage(privateKey, data["message"]);
             console.log("Sender Decrypted Message------------", decryptedMessage);
 
-
-            let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
             li.appendChild(document.createTextNode(data["sender"] + " : " + decryptedMessage));
             li.classList.add("left-align");
