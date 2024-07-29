@@ -444,6 +444,22 @@ body {
     background-color: #0056b3;
 }
 
+.clearHistory {
+    padding: 10px 20px;
+    background-color: #1cb13c;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.clearHistoryDiv {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 /** tyling for tab menu */
 .tab {
     overflow: hidden;
