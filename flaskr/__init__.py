@@ -38,19 +38,13 @@ socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 #help avoid CORS issues
 app = Flask(__name__)
 app.config.from_object(Config)
-#socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 def create_app():
-    #app = Flask(__name__)
-    #app.config.from_object(Config)
+    app = Flask(__name__)
+    app.config.from_object(Config)
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-    #app.config['MYSQL_HOST'] = 'localhost'
-    #app.config['MYSQL_USER'] = 'root'
-    #app.config['MYSQL_PASSWORD'] = 'password'
-    #app.config['MYSQL_DB'] = 'GOBUZZ'
 
     # create the db config
     if app.config['DB_TYPE'] == 'MYSQL':    
@@ -315,17 +309,13 @@ def create_app():
         try:
             print(f"Recepient Name-------> {data['recipient']}")
             print(f"Recepient Public Key-------> {data['email']}")
-            # if 'recipient' not in data or 'publicKey' not in data:
-            #     raise ValueError("Missing 'recipient' or 'publicKey' in data")
 
             recipient = data['recipient']
-            # public_key = data['publicKey']
 
             print(f"User {recipient} Joined!")
 
             clientsSID[recipient] = request.sid
             clients[request.sid] = recipient
-            # broadcastKeys[recipient] = public_key
             allClients[recipient] = data['email']
 
             emit("allUsers", {"allClients": allClients}, broadcast=True)
@@ -424,10 +414,10 @@ def create_app():
     @socketio.on('typing')
     def handle_typing(data):
         try:
-            #print(f"Typing event from {data['sender']} to {data['recipient']}")
             recipient = data['recipient']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
+                print(f'Client typing------->{clients[request.sid]}')
                 emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
@@ -435,10 +425,10 @@ def create_app():
     @socketio.on('stop_typing')
     def handle_stop_typing(data):
         try:
-            #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
             recipient = data['recipient']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
+                print(f'Client typing------->{clients[request.sid]}')
                 emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
@@ -491,7 +481,3 @@ def create_app():
 
 
 app = create_app()
-
-#if __name__ == "__main__":
-#    app = create_app()
-#    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
