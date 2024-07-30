@@ -54,7 +54,7 @@ async function loadPrivateKey() {
         );
         console.log("Private key successfully loaded.");
     } else {
-        console.error("No private key found in localStorage.");
+        console.log("No private key found in localStorage.");
     }
 }
 
@@ -107,7 +107,7 @@ async function getPasswordKey(password) {
     return window.crypto.subtle.deriveKey(
         {
             name: "PBKDF2",
-            salt: enc.encode("salt"), // Use a proper salt in production
+            salt: enc.encode("salt"), 
             iterations: 100000,
             hash: "SHA-256"
         },
@@ -188,9 +188,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     socket.on('message', async (data) => {
         try {
-
-            if (chatClient != data["sender"]){
-                let ul = document.getElementById("chat-msg");
+            let ul = document.getElementById("chat-msg");
+            if (chatClient != data["sender"]) {
+                displaySelectFriendMessage(false)
                 let li = document.createElement("li");
                 li.appendChild(document.createTextNode(`Chat with - ${data["sender"]}`));
                 li.classList.add("center_user");
@@ -202,15 +202,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             isCurrentUser = false;
-            
+
             console.log("Sender------------", data["sender"]);
             console.log("Sender Encrypted Message------------", data["message"]);
 
             const decryptedMessage = await decryptMessage(privateKey, data["message"]);
             console.log("Sender Decrypted Message------------", decryptedMessage);
 
-
-            let ul = document.getElementById("chat-msg");
             let li = document.createElement("li");
             li.appendChild(document.createTextNode(data["sender"] + " : " + decryptedMessage));
             li.classList.add("left-align");
@@ -247,6 +245,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         var clientKey = data['logoutUser']
         console.log('User logout========>', clientKey)
         console.log('Client keys========>', clientKeys)
+        if (chatClient == data['logoutUser']) {
+            let ul = document.getElementById("chat-msg");
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(`${data['logoutUser']} - User Logout`));
+            li.classList.add("logout_user");
+            ul.appendChild(li);
+            ul.scrollTop = ul.scrollHeight;
+
+            chatClient = null;
+        }
         if (clientKey in clientKeys) {
             delete clientKeys[clientKey];
             console.log('Client keys after delete========>', clientKeys)
@@ -266,16 +274,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('send').onclick = async () => {
-        await sendMessage();
-        socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        if (chatClient != null){
+            displaySelectFriendMessage(false);
+            await sendMessage();
+            socket.emit('stop_typing', { sender: username, recipient: chatClient });
+        } else {
+            displaySelectFriendMessage(true);
+        }
+        
+    };
+
+    document.getElementById('clearHistory').onclick = async () => {
+        let ul = document.getElementById("chat-msg");
+        ul.innerHTML = ""
     };
 
     document.getElementById("message-input").addEventListener("keypress", async function (event) {
         if (event.key === "Enter") {
-            await sendMessage();
-        }
-        console.log("Keypress detected, sending typing event");
+            if (chatClient != null){
+                displaySelectFriendMessage(false);
+                await sendMessage();
+                socket.emit('stop_typing', { sender: username, recipient: chatClient });
+            } else {
+                displaySelectFriendMessage(true);
+            }
+        } else {
+            console.log("Keypress detected, sending typing event");
         socket.emit('typing', { sender: username, recipient: chatClient });
+        }
+        
     });
 
     document.getElementById("message-input").addEventListener("keyup", function (event) {
@@ -312,7 +339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initiateUser() {
     try {
         username = userData.Username;
-        console.log("Initiate user===============================>>",username)
+        console.log("Initiate user===============================>>", username)
 
         // Check if private key exists in localStorage
         const privateKeyBase64 = localStorage.getItem('privateKey');
@@ -366,12 +393,13 @@ function loadAvailableFriends() {
                 <div class="last-active" id="last-active-${key}"></div>
                 <div class="action"><input type="button" style="background-color:rgb(196, 128, 32);" value="Invitation Sent" disabled></div>
             `;
-        } else if (user['status'] == 'available') {
+        } else if (user['status'] == 'available') {            
+            console.log("Public key---------------> "+publicKey);
             li.innerHTML = `
                 <div class="status-indicator"></div>
                 <div class="username">${key}</div>
                 <div class="last-active" id="last-active-${key}"></div>
-                <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='loadRequest(${JSON.stringify(user)}, "${publicKey}")'></div>
+                <div class="action"><input type="button" name="connect" value="Invite to chat" onclick='openEmailClientWindow(${JSON.stringify(user)}, "${publicKey}")'></div>
             `;
         }
 
@@ -402,12 +430,14 @@ function loadConReceiveFriends() {
                 <div class="action"><input type="button" name="add_friend" value="Add ParsePhase" onclick='loadReply(${JSON.stringify(user)}, "${publicKey}")'></div>
             `;
         } else if (user['status'] == 'con_recv' && user['publicKey'] != "") {
+            console.log("con_recv:Public key---------------> "+publicKey);
             li.innerHTML = `
                 <div class="status-indicator"></div>
                 <div class="username">${key}</div>
                 <div class="last-active" id="last-active-${key}"></div>
                 <div class="action"><input type="button" name="add_friend" value="Send Confirmation" style="background-color:rgb(196, 128, 32);" onclick='loadReply(${JSON.stringify(user)}, "${publicKey}")'></div>
             `;
+
         }
 
         friendsList.appendChild(li);
@@ -422,12 +452,28 @@ function OnAddParsePhaseClick(friendObj) {
     //console.log("OnAddParsePhaseClick----:");
     var parsePhase = document.getElementById("body_parsephase").value;
     console.log("OnAddParsePhaseClick-parsePhase=", parsePhase);
-    clientKeys[friendObj.username].publicKey = parsePhase;
-    document.getElementById('email_request_form').innerHTML = '';
-    document.getElementById('email_reply_form').innerHTML = '';
-    saveClientKeys();
-    loadConReceiveFriends();
-    loadAccepetdFriends();
+
+    const hasColon = parsePhase.includes(':');
+
+    if (hasColon) {
+        const parts = parsePhase.split(/:(.+)/);
+
+        const parsePhaseUser = parts[0];
+        const parsePhasePublicKey = parts[1];
+
+        if (parsePhaseUser == friendObj.username) {
+            clientKeys[friendObj.username].publicKey = parsePhasePublicKey;
+            document.getElementById('email_request_form').innerHTML = '';
+            document.getElementById('email_reply_form').innerHTML = '';
+            saveClientKeys();
+            loadConReceiveFriends();
+            loadAccepetdFriends();
+        } else {
+            publicKeyLoadForm(friendObj, true, 'Please Enter Correct Public Key')
+        }
+    } else {
+        publicKeyLoadForm(friendObj, true, 'Please Enter Correct Public Key')
+    }
 }
 
 
@@ -454,15 +500,19 @@ function loadAccepetdFriends() {
             `;
 
             li.addEventListener("click", () => {
-                chatClient = key;
-                chatClientPK = user.publicKey
+                if (chatClient != key){
+                    chatClient = key;
+                    chatClientPK = user.publicKey
+                    displaySelectFriendMessage(false)
 
-                let ul = document.getElementById("chat-msg");
-                let li = document.createElement("li");
-                li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
-                li.classList.add("center_user");
-                ul.appendChild(li);
-                ul.scrollTop = ul.scrollHeight;
+                    
+                    let ul = document.getElementById("chat-msg");
+                    let li = document.createElement("li");
+                    li.appendChild(document.createTextNode(`Chat with - ${chatClient}`));
+                    li.classList.add("center_user");
+                    ul.appendChild(li);
+                    ul.scrollTop = ul.scrollHeight;
+                }
             });
         }
 
@@ -474,76 +524,314 @@ function loadAccepetdFriends() {
  * Button click function for sending connection request via an email
  * this will open the email client for sending the email.
  */
-function OnRequestSend() {
+function OnRequestSend(obj, status) {
 
-    // // Get field data for email.
-    // const email = document.getElementById("email").value;
-    // const subject = document.getElementById('subject').value;
-    // const body = document.getElementById('body').value;
-
-    // // Create mailto link
-    // const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-
-    // // Open mailto link
-    // window.location.href = mailtoLink;
+    console.log('Status OnRequestSend------->', status)
+    if (status == "con_sent") {
+        clientKeys[obj.username].status = "con_sent";
+        saveClientKeys();
+        socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+        loadAvailableFriends();
+    } else if (status == "con_recv") {
+        clientKeys[obj.username].status = "accepted"
+        saveClientKeys();
+        socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
+        loadConReceiveFriends();
+        loadAccepetdFriends();
+    }
 
     document.getElementById('email_request_form').innerHTML = '';
     document.getElementById('email_reply_form').innerHTML = '';
 }
 
-// Toast notification and session check logic
-function showToast() {
-    var x = document.getElementById("toast");
-    x.classList.add("show");
-    setTimeout(function() {
-        x.classList.remove("show");
-        window.location.href = '/logout';
-    }, 6000); // Redirect to logout after showing toast
-}
+/**
+ * Function to open the email sending window.
+ */
+function openEmailClientWindow(obj, publicKey) {    
 
-function checkSession() {
-    fetch('/get_session')
-        .then(response => response.json())
-        .then(data => {
-            if (!data.active) {
-                showToast();
+    if(obj.status == 'available')
+    {
+        // execute pre-processing
+        clientKeys[obj.username].status = "con_sent";
+        saveClientKeys();
+        socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+        loadAvailableFriends();
+    }
+    
+    const emailWindow = window.open('', '_blank', 'width=600,height=400');    
+    // Define the HTML content for the new window to send the email request with invitation
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Send Gobuzz Chat Invitation</title>
+            <style>
+                body {
+                font-family: Arial, sans-serif;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background: linear-gradient(135deg, #72EDF2 10%, #5151E5 100%);
+                margin: 0;
+
+                .email-form-container {
+                    max-width: 500px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    background-color: #f9f9f9;
+                }
+
+                .email-form-container h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    color: #333;
+                }
+
+                .email-form-container form {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .email-form-container label {
+                    margin-bottom: 5px;
+                    font-weight: normal;
+                    color: #555;
+                    font-size: 15px;
+                }
+
+                .email-form-container input[type="email"],
+                .email-form-container input[type="text"],
+                .email-form-container textarea {
+                    width: 100%;
+                    padding: 5px 5px 5px 5px;
+                    margin-bottom: 1px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    font-size: 16px;
+                    color: #333;
+                }
+
+                .email-form-container input[type="email"]:focus,
+                .email-form-container input[type="text"]:focus,
+                .email-form-container textarea:focus {
+                    border-color: #007bff;
+                    outline: none;
+                }
+
+                .email-form-container textarea {
+                    height: 100px;
+                    resize: vertical;
+                }
+
+                .email-form-container button {
+                    margin-top: 5px;
+                    padding: 10px 15px;
+                    font-size: 16px;
+                    color: #fff;
+                    background-color: #007bff;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background-color 0.3s ease;
+                }
+
+                .email-form-container button:hover {
+                    background-color: #0056b3;
+                }
+            }
+            </style>
+        </head>
+        <body>
+            <div class="email-form-container">
+                <form id="emailForm">
+                    <label for="email">To:</label>
+                    <input type="email" id="email" name="email" value="${obj.email}" required>
+                    <label for="subject">Subject:</label>
+                    <input type="text" id="subject" name="subject" value="GoBuzz Chat Invitation" required>
+                    <label for="body">Body:</label>
+                    <textarea id="body" name="body" required>${publicKey}</textarea>  
+                    <button type="submit">Send Request</button>
+                </form>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    emailWindow.document.write(htmlContent);
+    emailWindow.document.close();
+
+    // Inject the script to handle form submission after the HTML is written
+    const scriptContent = `
+        document.getElementById('emailForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+            const email = document.getElementById('email').value;
+            const subject = document.getElementById('subject').value;
+            const body = document.getElementById('body').value;
+
+            if (email && subject && body) {
+                const mailtoLink = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+                //window.opener.notifyEmailSent(email);
+                window.open(mailtoLink, '_blank'); // Open the email client
+                window.close(); // Close the email client window
+            } else {
+                alert('All fields are required.');
             }
         });
+    `;
+    
+    const script = emailWindow.document.createElement('script');
+    script.textContent = scriptContent;
+    emailWindow.document.body.appendChild(script);
 }
 
-setInterval(checkSession, 1800000); // Check session every 30 minute (for testing purposes)
+/**
+ * Function to open the email sending window.
+ */
+function openEmailClientWindow(obj, publicKey) {    
 
-// Inactivity check logic
-let inactivityTime = function () {
-    let time;
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onmousedown = resetTimer;  // Catches touchscreen presses
-    window.ontouchstart = resetTimer; // Catches touchscreen swipes
-    window.ontouchmove = resetTimer;  // Catches touchscreen swipes
-    window.onclick = resetTimer;      // Catches touchpad clicks
-    window.onkeypress = resetTimer;   // Catches key presses
-
-    function logout() {
-        checkSession(); // Only check session when logging out due to inactivity
+    if(obj.status == 'available')
+    {
+        // execute pre-processing
+        clientKeys[obj.username].status = "con_sent";
+        saveClientKeys();
+        socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
+        loadAvailableFriends();
     }
+    
+    const emailWindow = window.open('', '_blank', 'width=600,height=400');    
+    // Define the HTML content for the new window to send the email request with invitation
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Send Gobuzz Chat Invitation</title>
+            <style>
+                body {
+                font-family: Arial, sans-serif;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background: linear-gradient(135deg, #72EDF2 10%, #5151E5 100%);
+                margin: 0;
 
-    function resetTimer() {
-        clearTimeout(time);
-        time = setTimeout(logout, 1800000);  // Logout after 30 minute of inactivity (for testing purposes)
-    }
-};
+                .email-form-container {
+                    max-width: 500px;
+                    margin: 20px auto;
+                    padding: 20px;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    background-color: #f9f9f9;
+                }
 
-inactivityTime(); // Initialize inactivity timer
+                .email-form-container h1 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    color: #333;
+                }
+
+                .email-form-container form {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .email-form-container label {
+                    margin-bottom: 5px;
+                    font-weight: normal;
+                    color: #555;
+                    font-size: 15px;
+                }
+
+                .email-form-container input[type="email"],
+                .email-form-container input[type="text"],
+                .email-form-container textarea {
+                    width: 100%;
+                    padding: 5px 5px 5px 5px;
+                    margin-bottom: 1px;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    font-size: 16px;
+                    color: #333;
+                }
+
+                .email-form-container input[type="email"]:focus,
+                .email-form-container input[type="text"]:focus,
+                .email-form-container textarea:focus {
+                    border-color: #007bff;
+                    outline: none;
+                }
+
+                .email-form-container textarea {
+                    height: 100px;
+                    resize: vertical;
+                }
+
+                .email-form-container button {
+                    margin-top: 5px;
+                    padding: 10px 15px;
+                    font-size: 16px;
+                    color: #fff;
+                    background-color: #007bff;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background-color 0.3s ease;
+                }
+
+                .email-form-container button:hover {
+                    background-color: #0056b3;
+                }
+            }
+            </style>
+        </head>
+        <body>
+            <div class="email-form-container">
+                <form id="emailForm">
+                    <label for="email">To:</label>
+                    <input type="email" id="email" name="email" value="${obj.email}" required>
+                    <label for="subject">Subject:</label>
+                    <input type="text" id="subject" name="subject" value="GoBuzz Chat Invitation" required>
+                    <label for="body">Body:</label>
+                    <textarea id="body" name="body" required>${publicKey}</textarea>  
+                    <button type="submit">Send Request</button>
+                </form>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    emailWindow.document.write(htmlContent);
+    emailWindow.document.close();
+
+    // Inject the script to handle form submission after the HTML is written
+    const scriptContent = `
+        document.getElementById('emailForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+            const email = document.getElementById('email').value;
+            const subject = document.getElementById('subject').value;
+            const body = document.getElementById('body').value;
+
+            if (email && subject && body) {
+                const mailtoLink = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+                //window.opener.notifyEmailSent(email);
+                window.open(mailtoLink, '_blank'); // Open the email client
+                window.close(); // Close the email client window
+            } else {
+                alert('All fields are required.');
+            }
+        });
+    `;
+    
+    const script = emailWindow.document.createElement('script');
+    script.textContent = scriptContent;
+    emailWindow.document.body.appendChild(script);
+}
 
 /**
  * Function to load the email request
  */
 function loadRequest(obj, publicKey) {
-    clientKeys[obj.username].status = "con_sent";
-    saveClientKeys();
-    socket.emit('send_email_notification', { recipient_name: obj.username, notification: "Public Key Request Send" });
-    loadAvailableFriends();
     const formContent = `
         <div class="email-form-container">
             <label for="email">Email:</label>
@@ -552,11 +840,9 @@ function loadRequest(obj, publicKey) {
             <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
             <label for="body">Body:</label>
             <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
+            <button type="button" onclick='OnRequestSend(${JSON.stringify(obj)}, "con_sent")'>Request To Connect</button>
         </div>
     `;
-    // load to the div_connect_request
-    //document.getElementById('div_connect_request').innerHTML = formContent;
     document.getElementById('email_request_form').innerHTML = formContent;
 }
 
@@ -567,36 +853,32 @@ function loadReply(obj, publicKey) {
     let formContent;
 
     if (clientKeys[obj.username].status == "con_recv" && clientKeys[obj.username].publicKey != "") {
-        formContent = `
-        <div class="email-form-container">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="${obj.email}" required>            
-            <label for="subject">Subject:</label>
-            <input type="text" id="subject" name="subject" value="GOBUZZ Public Key For - ${obj.username}" required>            
-            <label for="body">Body:</label>
-            <textarea id="body" name="body" required>${publicKey}</textarea>            
-            <button type="button" onclick="OnRequestSend()">Request To Connect</button>
-        </div>
-        `;
         clientKeys[obj.username].status = "accepted"
         saveClientKeys();
         socket.emit('reply_email_notification', { recipient_name: obj.username, notification: "Public Key Reply Send" });
         loadConReceiveFriends();
         loadAccepetdFriends();
+        openEmailClientWindow(obj.username, publicKey);
     } else {
-        formContent = `
+        publicKeyLoadForm(obj, false, 'nil');
+    }
+}
+
+function publicKeyLoadForm(obj, showMsg, msg = '') {
+    const conditionalP = showMsg ? `<p style="color: red;">${msg}</p>` : '';
+
+    formContent = `
         <div class="email-form-container">
             <label for="body_parsephase">ParsePhase:</label>
             <textarea id="body_parsephase" name="body" placeholder="Enter the Public Key received via the email. Please check email and enter the Public Key" required></textarea>
+            ${conditionalP}
             <button type="button" name="connect" onclick='OnAddParsePhaseClick(${JSON.stringify(obj)})'>Add ParsePhase</button>
         </div>
         `;
-        if (clientKeys[obj.username].status == "con_reply_recv") {
-            clientKeys[obj.username].status = "accepted";
-            saveClientKeys();
-        }
+    if (clientKeys[obj.username].status == "con_reply_recv") {
+        clientKeys[obj.username].status = "accepted";
+        saveClientKeys();
     }
-
     document.getElementById('email_reply_form').innerHTML = formContent;
 }
 
@@ -636,7 +918,8 @@ async function generateRSAKeyPair() {
     );
 
     const publicKeyArrayBuffer = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-    const publicKeyBase64 = arrayBufferToBase64(publicKeyArrayBuffer);
+    const publicKeyBase64 = username + ':' + arrayBufferToBase64(publicKeyArrayBuffer);
+
 
     console.log("Generated Public Key (Base64):", publicKeyBase64);
     privateKey = keyPair.privateKey;
@@ -651,6 +934,13 @@ async function generateRSAKeyPair() {
     return publicKeyBase64;
 }
 
+async function generateSHA256Hash(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
 
 async function encryptMessage(publicKeyBase64, message) {
     try {
@@ -739,6 +1029,24 @@ function isBase64(str) {
     return base64Pattern.test(str);
 }
 
+function displaySelectFriendMessage(visibility) {
+    const selectFriend = document.getElementById('select-friend');
+    if (visibility) {
+        if (!selectFriend.querySelector('p')) { // Check if the message is not already displayed
+            const message = document.createElement('p');
+            message.style.color = 'red';
+            message.textContent = 'Please select a friend to chat';
+            selectFriend.appendChild(message);
+        }
+    } else {
+        const message = selectFriend.querySelector('p');
+        if (message) {
+            selectFriend.removeChild(message);
+        }
+    }
+    
+}
+
 function confirmLogout() {
 
     const modal = document.getElementById("confirmationModal");
@@ -769,7 +1077,7 @@ function confirmLogout() {
         }
     };
 
-    
+
 }
 
 function logout() {
@@ -787,5 +1095,3 @@ function logout() {
         console.error("Logout error:", error);
     });
 }
-
-console.log()

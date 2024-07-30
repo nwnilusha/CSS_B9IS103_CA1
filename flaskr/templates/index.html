@@ -1,44 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <style type="text/css">
+    <!-- <style type="text/css">
         .typing-indicator {
             font-style: italic;
             color: grey;
             padding: 5px;
             height: 20px;
         }
-
-        .toast {
-            visibility: hidden;
-            min-width: 250px;
-            margin-left: -125px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 2px;
-            position: fixed;
-            z-index: 1;
-            left: 50%;
-            bottom: 30px;
-            font-size: 17px;
-            padding: 10px;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out, bottom 0.5s ease-in-out;
-        }
-
-        .toast.show {
-            visibility: visible;
-            opacity: 1;
-            bottom: 30px;
-        }
-
-        .toast.hide {
-            visibility: hidden;
-            opacity: 0;
-            bottom: 0;
-        }
-    </style>
+    </style> -->
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -96,13 +66,21 @@
                         </div>
                         <div>
                             <div class="online-chat-container">   
-                                <ul id="chat-msg"></ul>                     
+                                <ul id="chat-msg"></ul> 
+                                <div class="select-friend", id="select-friend"></div>                    
                                 <div class="chat-content">
+                                    
                                     <div class="chat-input">
                                         <input type="text" id="message-input" placeholder="Type a message..." aria-label="Message input" />
                                         <button id="send">Send</button>
+                                        
                                     </div>
+                                    
                                     <div class="typing-indicator" id="typing-indicator"></div>
+                                    
+                                </div>
+                                <div class="clearHistoryDiv">
+                                    <button id="clearHistory" class="clearHistory">Clear History</button>
                                 </div>
                             </div>
                         </div>
