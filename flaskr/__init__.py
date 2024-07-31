@@ -1,10 +1,11 @@
+from datetime import timedelta
 from gevent import monkey
 monkey.patch_all()
 
 import os
 import secrets
 import string
-from flask import Flask, render_template, request, session, redirect, url_for, g, flash, jsonify
+from flask import Flask, current_app, render_template, request, session, redirect, url_for, g, flash, jsonify
 from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
@@ -100,13 +101,14 @@ def create_app():
     socketio.init_app(app) 
     bcrypt = Bcrypt(app)
 
-    def send_verification_email(email):
-        token = s.dumps(email, salt='email-confirm')
-        verification_url = url_for('verify_email', token=token, _external=True)
-        msg = Message('Email Verification', recipients=[email])
-        msg.body = f'Please verify your email by clicking the following link: {verification_url}'
+    def send_verification_email(user_email):
+        token = s.dumps(user_email, salt='email-confirm')
+        # This uses BASE_URL directly for generating the full verification link
+        verification_url = f"{current_app.config['BASE_URL']}/verify_email/{token}"
+
+        msg = Message('Confirm your Email', sender='your_email@example.com', recipients=[user_email])
+        msg.body = f"Please click on the link to verify your email: {verification_url}"
         mail.send(msg)
-        flash('A verification email has been sent to your email address. Please check your inbox.', 'info')
 
     # Application's main page
     @app.route("/index")
