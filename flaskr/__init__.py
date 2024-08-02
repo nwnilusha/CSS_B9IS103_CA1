@@ -4,7 +4,7 @@ monkey.patch_all()
 import os
 import secrets
 import string
-from flask import Flask, render_template, request, session, redirect, url_for, g, flash
+from flask import Flask, current_app, render_template, request, session, redirect, url_for, g, flash
 from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
@@ -97,14 +97,14 @@ def create_app():
     socketio.init_app(app) 
     bcrypt = Bcrypt(app)
 
-    def send_verification_email(email):
-        token = s.dumps(email, salt='email-confirm')
-        verification_url = url_for('verify_email', token=token, _external=True)
-        msg = Message('Email Verification', recipients=[email])
-        msg.body = f'Please verify your email by clicking the following link: {verification_url}'
-        mail.send(msg)
-        flash('A verification email has been sent to your email address. Please check your inbox.', 'info')
+    def send_verification_email(user_email):
+        token = s.dumps(user_email, salt='email-confirm')
+        # This uses BASE_URL directly for generating the full verification link
+        verification_url = f"{current_app.config['BASE_URL']}/verify_email/{token}"
 
+        msg = Message('Confirm your Email', sender='your_email@example.com', recipients=[user_email])
+        msg.body = f"Please click on the link to verify your email: {verification_url}"
+        mail.send(msg)
     # Application's main page
     @app.route("/index")
     def index():
@@ -274,28 +274,30 @@ def create_app():
     def verify_email(token):
         try:
             email = s.loads(token, salt='email-confirm', max_age=3600)
-            select_query = None
-            db = g.get('db')
-
-            select_query = None
-            if app.config['DB_TYPE'] == 'SQLITE':
-                select_query = "SELECT * FROM USER WHERE email = ?"
-                result = db.fetch_query(select_query, (email,))
-            else:
-                select_query = "SELECT * FROM USER WHERE email = %s"
-                result = db.fetch_query(select_query, (email,))
-            
-            if result:
-                if app.config['DB_TYPE'] == 'SQLITE':
-                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
-                    result = db.execute_vquery(update_query, (email,))
-
-                return redirect(url_for('login', message='Verification successful! Please log in.'))
-            else:
-                return render_template('verify_email.html', message='Verification failed. User not found.')
         except SignatureExpired:
             return render_template('verify_email.html', message='The verification link has expired.')
-    
+
+        try:
+            if app.config['DB_TYPE'] == 'SQLITE':
+                select_query = "SELECT * FROM USER WHERE email = ?"
+            else:
+                select_query = "SELECT * FROM USER WHERE email = %s"
+
+            db = g.get('db')
+            result = db.fetch_query(select_query, (email,))
+            if result:
+                update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
+                update_result = db.execute_vquery(update_query, (email,))
+                if update_result:
+                    return redirect(url_for('login', message='Verification successful! Please log in.'))
+                else:
+                    raise Exception("Failed to update user verification status.")
+            else:
+                return render_template('verify_email.html', message='Verification failed. User not found.')
+        except Exception as e:
+            # Consider logging the exception details here for further investigation
+            return render_template('verify_email.html', message=f'An error occurred: {str(e)}')
+
     @socketio.on('connect')
     def handle_connect():
         print('Client Connected')
