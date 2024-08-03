@@ -98,13 +98,18 @@ def create_app():
     bcrypt = Bcrypt(app)
 
     def send_verification_email(user_email):
-        token = s.dumps(user_email, salt='email-confirm')
+        #token = s.dumps(user_email, salt='email-confirm')
         # This uses BASE_URL directly for generating the full verification link
-        verification_url = f"{current_app.config['BASE_URL']}/verify_email/{token}"
+        #verification_url = f"{current_app.config['BASE_URL']}/verify_email/{token}"
+
+        verification_token = s.dumps(user_email, salt='email-confirm')
+        verification_url = url_for('verify_email', token=verification_token, _external=True)
 
         msg = Message('Confirm your Email', sender='your_email@example.com', recipients=[user_email])
         msg.body = f"Please click on the link to verify your email: {verification_url}"
         mail.send(msg)
+
+
     # Application's main page
     @app.route("/index")
     def index():
@@ -277,6 +282,8 @@ def create_app():
         except SignatureExpired:
             return render_template('verify_email.html', message='The verification link has expired.')
 
+        print(f"verification in progres... email: {email}")
+
         try:
             if app.config['DB_TYPE'] == 'SQLITE':
                 select_query = "SELECT * FROM USER WHERE email = ?"
@@ -285,13 +292,18 @@ def create_app():
 
             db = g.get('db')
             result = db.fetch_query(select_query, (email,))
-            if result:
-                update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
+            if result:                
+                if app.config['DB_TYPE'] == 'SQLITE':
+                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
+                else:
+                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = %s"
+
                 update_result = db.execute_vquery(update_query, (email,))
-                if update_result:
+                if update_result >= 0:
                     return redirect(url_for('login', message='Verification successful! Please log in.'))
                 else:
-                    raise Exception("Failed to update user verification status.")
+                    #raise Exception("Failed to update user verification status.")
+                    return redirect(url_for('login', message='Email verification failed.'))
             else:
                 return render_template('verify_email.html', message='Verification failed. User not found.')
         except Exception as e:

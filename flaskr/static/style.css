@@ -396,14 +396,10 @@ body {
 
 /* Additional styling for chat content */
 .chat-container {
-    width: 96.5%;
-    max-width: 1200px; /* Adjust as necessary */
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #f9f9f9;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
 }
 
 
@@ -458,17 +454,6 @@ body {
     transition: background-color 0.3s;
 }
 
-.chat-content .online-chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
 .clearHistoryDiv {
     display: flex;
     justify-content: center;
@@ -518,10 +503,7 @@ body {
 
 .flex-container {
     display: flex;
-    justify-content: space-between;
     width: 100%;
-    padding: 20px;
-    box-sizing: border-box;
     background-color: skyblue;
 }
 
