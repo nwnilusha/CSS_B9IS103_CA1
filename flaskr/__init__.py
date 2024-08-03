@@ -96,6 +96,7 @@ def create_app():
         msg.body = f"Please click on the link to verify your email: {verification_url}"
         mail.send(msg)
     # Application's main page
+
     @app.route("/index")
     def index():
         if 'loggedin' in session:
@@ -275,8 +276,12 @@ def create_app():
 
             db = g.get('db')
             result = db.fetch_query(select_query, (email,))
-            if result:
-                update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
+            if result:                
+                if app.config['DB_TYPE'] == 'SQLITE':
+                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
+                else:
+                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = %s"
+                    
                 update_result = db.execute_vquery(update_query, (email,))
                 if update_result:
                     return redirect(url_for('login', message='Verification successful! Please log in.'))
