@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const hasColon = decryptedMessage.includes(':');
 
             if (hasColon) {
-                const parts = parsePhase.split(/:(.+)/);
+                const parts = decryptedMessage.split(/:(.+)/);
 
                 const receivedMessageId = parts[0];
                 const receivedMessage = parts[1];
@@ -769,7 +769,8 @@ function publicKeyLoadForm(obj, showMsg, msg = '') {
 async function sendMessage() {
     clientKeys[chatClient].sendMessageId = clientKeys[chatClient].sendMessageId + 1
     console.log("Send message number----------->", clientKeys[chatClient].sendMessageId)
-    const clientMessage = clientKeys[chatClient].sendMessageId + ':' + document.getElementById('message-input').value;
+    const clientMessageText = document.getElementById('message-input').value;
+    const clientMessage = clientKeys[chatClient].sendMessageId + ':' + clientMessageText;
     console.log("Message before encrypt-----------", clientMessage)
     const encryptedMessage = await encryptMessage(chatClientPK, clientMessage)
     console.log("Message after encrypt-----------", encryptedMessage)
@@ -780,7 +781,7 @@ async function sendMessage() {
         isCurrentUser = true;
         let ul = document.getElementById("chat-msg");
         let li = document.createElement("li");
-        li.appendChild(document.createTextNode("Me : " + clientMessage));
+        li.appendChild(document.createTextNode("Me : " + clientMessageText));
         li.classList.add("right-align");
         ul.appendChild(li);
         ul.scrollTop = ul.scrollHeight;
@@ -917,7 +918,6 @@ function isBase64(str) {
 
 function displaySelectFriendMessage(visibility) {
 
-    sfdfd
     const selectFriend = document.getElementById('select-friend');
     if (visibility) {
         if (!selectFriend.querySelector('p')) { // Check if the message is not already displayed
