@@ -212,11 +212,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             clientKeys[data["sender"]].receivedMessageId = clientKeys[data["sender"]].receivedMessageId + 1
             console.log("Received message id------------", clientKeys[data["sender"]].receivedMessageId);
 
-            let li = document.createElement("li");
-            li.appendChild(document.createTextNode(data["sender"] + " : " + decryptedMessage));
-            li.classList.add("left-align");
-            ul.appendChild(li);
-            ul.scrollTop = ul.scrollHeight;
+            const hasColon = decryptedMessage.includes(':');
+
+            if (hasColon) {
+                const parts = parsePhase.split(/:(.+)/);
+
+                const receivedMessageId = parts[0];
+                const receivedMessage = parts[1];
+
+                if (receivedMessageId == clientKeys[data["sender"]].receivedMessageId) {
+                    let li = document.createElement("li");
+                    li.appendChild(document.createTextNode(data["sender"] + " : " + receivedMessage));
+                    li.classList.add("left-align");
+                    ul.appendChild(li);
+                    ul.scrollTop = ul.scrollHeight;
+                } else {
+                    const selectFriend = document.getElementById('select-friend');
+                    const message = document.createElement('p');
+                    message.style.color = 'red';
+                    message.textContent = 'Message order not correct...!!!!';
+                    selectFriend.appendChild(message);
+                }
+            } else {
+                console.log('Message format error...');
+            }
+
+            
         } catch (error) {
             console.error("Error during decryption:", error);
         }
@@ -748,7 +769,7 @@ function publicKeyLoadForm(obj, showMsg, msg = '') {
 async function sendMessage() {
     clientKeys[chatClient].sendMessageId = clientKeys[chatClient].sendMessageId + 1
     console.log("Send message number----------->", clientKeys[chatClient].sendMessageId)
-    const clientMessage = clientKeys[chatClient].sendMessageId + document.getElementById('message-input').value;
+    const clientMessage = clientKeys[chatClient].sendMessageId + ':' + document.getElementById('message-input').value;
     console.log("Message before encrypt-----------", clientMessage)
     const encryptedMessage = await encryptMessage(chatClientPK, clientMessage)
     console.log("Message after encrypt-----------", encryptedMessage)
@@ -895,6 +916,8 @@ function isBase64(str) {
 }
 
 function displaySelectFriendMessage(visibility) {
+
+    sfdfd
     const selectFriend = document.getElementById('select-friend');
     if (visibility) {
         if (!selectFriend.querySelector('p')) { // Check if the message is not already displayed
