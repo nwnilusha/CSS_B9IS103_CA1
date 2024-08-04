@@ -209,6 +209,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const decryptedMessage = await decryptMessage(privateKey, data["message"]);
             console.log("Sender Decrypted Message------------", decryptedMessage);
 
+            clientKeys[data["sender"]].receivedMessageId = clientKeys[data["sender"]].receivedMessageId + 1
+            console.log("Received message id------------", clientKeys[data["sender"]].receivedMessageId);
+
             let li = document.createElement("li");
             li.appendChild(document.createTextNode(data["sender"] + " : " + decryptedMessage));
             li.classList.add("left-align");
@@ -231,7 +234,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     'username': key,
                     'publicKey': '',
                     'email': email,
-                    'status': 'available'
+                    'status': 'available',
+                    'sendMessageId': 0,
+                    'receivedMessageId': 0
                 }
             }
             console.log("-------end-------");
@@ -741,7 +746,9 @@ function publicKeyLoadForm(obj, showMsg, msg = '') {
 }
 
 async function sendMessage() {
-    const clientMessage = document.getElementById('message-input').value;
+    clientKeys[chatClient].sendMessageId = clientKeys[chatClient].sendMessageId + 1
+    console.log("Send message number----------->", clientKeys[chatClient].sendMessageId)
+    const clientMessage = clientKeys[chatClient].sendMessageId + document.getElementById('message-input').value;
     console.log("Message before encrypt-----------", clientMessage)
     const encryptedMessage = await encryptMessage(chatClientPK, clientMessage)
     console.log("Message after encrypt-----------", encryptedMessage)
