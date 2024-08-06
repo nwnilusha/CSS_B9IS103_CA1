@@ -51,15 +51,6 @@ body {
     background-color: #0056b3;
 }
 
-/* .chat-container {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    background-color: #fff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-} */
-
 .chat-header {
     display: flex;
     justify-content: space-between;
@@ -175,7 +166,7 @@ body {
     background-color: #45a049;
   }
   
-  .email-form-container {
+.email-form-container {
     max-width: 500px;
     margin: 20px auto;
     padding: 20px;
@@ -298,7 +289,7 @@ body {
 
 #chat-msg li.left-align {
     text-align: left;
-    background-color: #f1f1f1;
+    background-color: #aeabab;
 }
 
 #chat-msg li.right-align {
@@ -314,6 +305,12 @@ body {
 
 .center_user {
     color: green;
+    font-weight: bold;
+    text-align: center;
+}
+
+.logout_user {
+    color: red;
     font-weight: bold;
     text-align: center;
 }
@@ -447,6 +444,22 @@ body {
     background-color: #0056b3;
 }
 
+.clearHistory {
+    padding: 10px 20px;
+    background-color: #1cb13c;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.clearHistoryDiv {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 /** tyling for tab menu */
 .tab {
     overflow: hidden;
@@ -487,10 +500,11 @@ body {
     margin-top: 0;
 }
 
+
 .flex-container {
-  display: flex;
-  width: 100%;
-  background-color: skyblue;
+    display: flex;
+    width: 100%;
+    background-color: skyblue;
 }
 
 .flex-container > div {

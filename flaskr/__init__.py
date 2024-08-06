@@ -1,7 +1,10 @@
+from gevent import monkey
+monkey.patch_all()
+
 import os
 import secrets
 import string
-from flask import Flask, render_template, request, session, redirect, url_for, g, flash
+from flask import Flask, current_app, render_template, request, session, redirect, url_for, g, flash
 from flask_bcrypt import Bcrypt, generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import mysql.connector
@@ -13,6 +16,7 @@ from flaskr.config import Config
 from flaskr.db import Database
 from flaskr.db import DatabaseSQLite
 
+
 clients = {}
 clientsSID = {}
 allClients = {}
@@ -22,18 +26,15 @@ def generate_secret_key(length=32):
     alphabet = string.ascii_letters + string.digits + '!@#$%^&*()-=_+'
     return ''.join(secrets.choice(alphabet) for _ in range(length))
 
-socketio = SocketIO()
+app = Flask(__name__)
+app.config.from_object(Config)
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     mail = Mail(app)
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-    #app.config['MYSQL_HOST'] = 'localhost'
-    #app.config['MYSQL_USER'] = 'root'
-    #app.config['MYSQL_PASSWORD'] = 'password'
-    #app.config['MYSQL_DB'] = 'GOBUZZ'
 
     # create the db config
     if app.config['DB_TYPE'] == 'MYSQL':    
@@ -86,13 +87,18 @@ def create_app():
     socketio.init_app(app) 
     bcrypt = Bcrypt(app)
 
-    def send_verification_email(email):
-        token = s.dumps(email, salt='email-confirm')
-        verification_url = url_for('verify_email', token=token, _external=True)
-        msg = Message('Email Verification', recipients=[email])
-        msg.body = f'Please verify your email by clicking the following link: {verification_url}'
+    def send_verification_email(user_email):
+        #token = s.dumps(user_email, salt='email-confirm')
+        # This uses BASE_URL directly for generating the full verification link
+        #verification_url = f"{current_app.config['BASE_URL']}/verify_email/{token}"
+
+        verification_token = s.dumps(user_email, salt='email-confirm')
+        verification_url = url_for('verify_email', token=verification_token, _external=True)
+
+        msg = Message('Confirm your Email', sender='your_email@example.com', recipients=[user_email])
+        msg.body = f"Please click on the link to verify your email: {verification_url}"
         mail.send(msg)
-        flash('A verification email has been sent to your email address. Please check your inbox.', 'info')
+
 
     # Application's main page
     @app.route("/index")
@@ -263,28 +269,37 @@ def create_app():
     def verify_email(token):
         try:
             email = s.loads(token, salt='email-confirm', max_age=3600)
-            select_query = None
-            db = g.get('db')
-
-            select_query = None
-            if app.config['DB_TYPE'] == 'SQLITE':
-                select_query = "SELECT * FROM USER WHERE email = ?"
-                result = db.fetch_query(select_query, (email,))
-            else:
-                select_query = "SELECT * FROM USER WHERE email = %s"
-                result = db.fetch_query(select_query, (email,))
-            
-            if result:
-                if app.config['DB_TYPE'] == 'SQLITE':
-                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
-                    result = db.execute_vquery(update_query, (email,))
-
-                return redirect(url_for('login', message='Verification successful! Please log in.'))
-            else:
-                return render_template('verify_email.html', message='Verification failed. User not found.')
         except SignatureExpired:
             return render_template('verify_email.html', message='The verification link has expired.')
-    
+
+        print(f"verification in progres... email: {email}")
+
+        try:
+            if app.config['DB_TYPE'] == 'SQLITE':
+                select_query = "SELECT * FROM USER WHERE email = ?"
+            else:
+                select_query = "SELECT * FROM USER WHERE email = %s"
+
+            db = g.get('db')
+            result = db.fetch_query(select_query, (email,))
+            if result:                
+                if app.config['DB_TYPE'] == 'SQLITE':
+                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = ?"
+                else:
+                    update_query = "UPDATE USER SET emailVerified = 1 WHERE email = %s"
+
+                update_result = db.execute_vquery(update_query, (email,))
+                if update_result >= 0:
+                    return redirect(url_for('login', message='Verification successful! Please log in.'))
+                else:
+                    #raise Exception("Failed to update user verification status.")
+                    return redirect(url_for('login', message='Email verification failed.'))
+            else:
+                return render_template('verify_email.html', message='Verification failed. User not found.')
+        except Exception as e:
+            # Consider logging the exception details here for further investigation
+            return render_template('verify_email.html', message=f'An error occurred: {str(e)}')
+
     @socketio.on('connect')
     def handle_connect():
         print('Client Connected')
@@ -298,17 +313,13 @@ def create_app():
         try:
             print(f"Recepient Name-------> {data['recipient']}")
             print(f"Recepient Public Key-------> {data['email']}")
-            # if 'recipient' not in data or 'publicKey' not in data:
-            #     raise ValueError("Missing 'recipient' or 'publicKey' in data")
 
             recipient = data['recipient']
-            # public_key = data['publicKey']
 
             print(f"User {recipient} Joined!")
 
             clientsSID[recipient] = request.sid
             clients[request.sid] = recipient
-            # broadcastKeys[recipient] = public_key
             allClients[recipient] = data['email']
 
             emit("allUsers", {"allClients": allClients}, broadcast=True)
@@ -407,10 +418,10 @@ def create_app():
     @socketio.on('typing')
     def handle_typing(data):
         try:
-            #print(f"Typing event from {data['sender']} to {data['recipient']}")
             recipient = data['recipient']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
+                print(f'Client typing------->{clients[request.sid]}')
                 emit('typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
@@ -418,10 +429,10 @@ def create_app():
     @socketio.on('stop_typing')
     def handle_stop_typing(data):
         try:
-            #print(f"Stop typing event from {data['sender']} to {data['recipient']}")
             recipient = data['recipient']
             if recipient in clientsSID:
                 recipient_sid = clientsSID[recipient]
+                print(f'Client typing------->{clients[request.sid]}')
                 emit('stop_typing', {'sender': clients[request.sid]}, room=recipient_sid)
         except Exception as ex:
             print(f"An error occurred: {ex}")
@@ -472,6 +483,4 @@ def create_app():
 
     return app
 
-if __name__ == "__main__":
-    app = create_app()
-    socketio.run(app, host='0.0.0.0', port=8080, debug=True)
+app = create_app()

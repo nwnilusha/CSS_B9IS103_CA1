@@ -25,6 +25,8 @@ class Config:
     # introduce DB type, vlues are MYSQL or SQLITE
     DB_TYPE = "SQLITE"
 
+    BASE_URL = 'https://gobuzz-c5a12ea3ac14.herokuapp.com'
+
     # SMTP Configuration for Gmail
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
